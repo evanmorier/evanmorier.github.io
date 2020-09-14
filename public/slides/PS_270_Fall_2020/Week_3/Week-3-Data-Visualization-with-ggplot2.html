@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Intro to Data Visualization in .black-bold[R] using .or-bold[ggplot2]</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Evan Morier" />
+    <link href="libs/xaringanExtra-extra-styles-0.2.3/xaringanExtra-extra-styles.css" rel="stylesheet" />
+    <link href="libs/panelset-0.2.3/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset-0.2.3/panelset.js"></script>
+    <link href="libs/animate.css-xaringan-3.7.2/animate.fade.css" rel="stylesheet" />
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Intro to Data Visualization in .black-bold[R] using .or-bold[ggplot2]
+### Evan Morier
+
+---
+
+
+class: top, left
+
+# Welcome
+
+If you want to run the code in these slides, you need to install the `fivethirtyeight` package by running this code in the Console in RStudio:
+
+
+```r
+install.packages("fivethirtyeight")
+```
+
+--
+
+Also make sure to load it
+
+- And load the `tidyverse` set of packages, which includes `ggplot2`
+
+
+```r
+library(tidyverse)
+library(fivethirtyeight)
+```
+
+
+
+
+
+
+
+---
+
+class: middle, center
+
+
+![](ggplot2_masterpiece.png)
+
+
+
+---
+class: middle, left
+
+# `ggplot` basics
+
+
+First, specify the data set you are going to be plotting from (a `data.frame` object)
+
+Then, specify the aesthetic mappings (variables we are plotting)
+
+Finally, add plot type/other layers with geoms
+
+
+---
+class: middle
+
+## The bare minimum needed to produce a plot:
+
+
+```r
+ggplot(&lt;data&gt;, aes(&lt;variables&gt;)) + 
+  geom_&lt;type of plot/layer&gt;()
+```
+
+
+---
+class: top
+
+## A quick exploratory example
+
+.panelset[
+.panel[.panel-name[R Code]
+
+```r
+ggplot(senate_polls, aes(x=presidential_approval)) +
+  geom_histogram()
+```
+
+]
+
+.panel[.panel-name[Plot]
+&lt;img src="Week-3-Data-Visualization-with-ggplot2_files/figure-html/unnamed-chunk-4-1.png" width="504" /&gt;
+]
+]
+
+---
+class: middle, center
+
+## *FiveThirtyEight* plot replication
+
+Let's try to recreate a visualization from [a story on Senate poll accuracy from 538](https://fivethirtyeight.com/features/early-senate-polls-have-plenty-to-tell-us-about-november/)
+
+![](enten-early-polls-prediction.png)
+
+
+---
+class: middle
+
+# First thing's first
+
+First, let's try to do a simple scatterplot of the `poll_average` and `election_result` variables
+
+How would we do this in ggplot? Take a couple of minutes to try writing this code
+
+Remember, `poll_average` is our independent variable here
+
+
+---
+class: top
+
+# The Code, Round 1
+
+.panelset[
+.panel[.panel-name[R Code]
+
+```r
+ggplot(senate_polls, aes(x=poll_average, y=election_result)) +
+  geom_point()
+```
+
+]
+
+.panel[.panel-name[Plot]
+&lt;img src="Week-3-Data-Visualization-with-ggplot2_files/figure-html/unnamed-chunk-5-1.png" width="504" /&gt;
+
+What do we need to change or add? How might we do it?
+]
+]
+
+
+
+---
+class: top, left
+
+# Additions and Modifications
+
+.panelset[
+.panel[.panel-name[R Code]
+
+
+```r
+ggplot(senate_polls, aes(x=poll_average, y=election_result)) +
+  geom_point() +
+  geom_smooth(method="lm") + # lm is a straight line
+  geom_hline(yintercept =  0) + 
+  geom_vline(xintercept =  0)
+```
+]
+
+.panel[.panel-name[Plot]
+&lt;img src="Week-3-Data-Visualization-with-ggplot2_files/figure-html/unnamed-chunk-6-1.png" width="504" /&gt;
+]
+]
+
+---
+class: top, left
+
+# Final Version
+
+.panelset[
+.panel[.panel-name[R Code]
+
+
+```r
+ggplot(senate_polls, aes(x=poll_average, y=election_result)) +
+  geom_point(alpha=.4, size=2.5) + # might need to fiddle w. size here
+  geom_smooth(method = "lm", se = FALSE, color= "red") + 
+  # se sets confidence interval for line
+  geom_hline(yintercept =  0, alpha = .5) + # alpha sets transparency
+  geom_vline(xintercept =  0, alpha=.5) +
+  labs(title = "Early Senate Poll Accuracy Since 2006",
+       subtitle = "Final margin vs. average margin, January to June",
+       x="Early poll margin", y="Final margin")
+```
+
+Note: there is a lot here. It's okay if you don't get it all now! Focus on rounds 1 &amp; 2
+
+]
+
+.panel[.panel-name[Plot]
+&lt;img src="Week-3-Data-Visualization-with-ggplot2_files/figure-html/unnamed-chunk-7-1.png" width="504" /&gt;
+]
+]
+
+---
+class: middle, center
+
+# On Your Own
+
+How would you produce this second plot from the article?
+  
+![](enten-early-approval-prediction.png)
+
+
+---
+class: inverse, middle, center
+
+# Pause and try it out!
+
+
+---
+class: top, left
+
+# Sample solutions
+
+.panelset[
+.panel[.panel-name[R Code]
+
+
+```r
+ggplot(senate_polls, aes(x=presidential_approval, y=election_result)) +
+  geom_point(alpha=.4, size=2.5) + 
+  geom_smooth(method = "lm", se = FALSE, color= "red") + 
+  geom_hline(yintercept =  0, alpha = .5) +
+  labs(title = "Early Presidential Approval and Senate Outcomes",
+       subtitle = "Senate results vs. January to June Approval average, since 2006",
+       x="Early presidential approval", y="Final margin")
+```
+]
+
+.panel[.panel-name[Plot]
+&lt;img src="Week-3-Data-Visualization-with-ggplot2_files/figure-html/unnamed-chunk-8-1.png" width="504" /&gt;
+]
+]
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

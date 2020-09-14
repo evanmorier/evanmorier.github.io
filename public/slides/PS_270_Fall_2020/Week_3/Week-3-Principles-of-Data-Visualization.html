@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Principles of Data Visualization</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Evan Morier" />
+    <link href="libs/xaringanExtra-extra-styles-0.2.3/xaringanExtra-extra-styles.css" rel="stylesheet" />
+    <link href="libs/panelset-0.2.3/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset-0.2.3/panelset.js"></script>
+    <link href="libs/animate.css-xaringan-3.7.2/animate.fade.css" rel="stylesheet" />
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Principles of Data Visualization
+### Evan Morier
+### PS 270: Understanding Political Numbers
+### September 2020
+
+---
+
+
+class: middle, center
+
+# Pie Charts
+
+![](bad_pie.png)
+
+
+
+
+
+
+
+
+---
+
+class: middle
+
+
+# A pie chart alternative
+
+![Population of Five US States](good_not_pie.png)
+
+
+&lt;!-- .pull-left[ --&gt;
+
+&lt;!-- ] --&gt;
+
+&lt;!-- .pull-right[ --&gt;
+&lt;!-- ![](.png) --&gt;
+&lt;!-- ] --&gt;
+
+
+
+---
+
+class: middle
+
+# Why look at data?
+
+  - Often easier to interpret than a table with numbers
+  
+  
+  - Conveys more information than numerical summaries
+
+
+---
+class: top, center
+
+## Anscombe’s Quartet&lt;sup&gt;1&lt;/sup&gt;
+
+&lt;img src="ch-01-anscombe-1.PNG" width="75%" height="90%" /&gt;
+
+.footnote[
+[1][Source](https://socviz.co/lookatdata.html)
+]
+
+
+
+
+---
+
+class: middle
+
+# Some goals of data visualization
+
+Present data faithfully
+
+Balance minimalist goal with desire to present a lot of information
+
+Make things look nice without sacrificing accuracy/interpretability
+
+
+
+---
+
+class: middle
+
+# How to think about data visualization
+
+Imagine you have never seen the data before
+
+Ask yourself:
+
+- What is the main message that the figure tells?
+
+- Is it clear what variables are being represented?
+
+- Is it easy to figure out what different shapes/colors/etc. represent?
+
+
+---
+
+class: inverse, middle, center
+
+# Let's look at some data viz
+
+
+---
+
+class: top
+
+# Before we get into it...
+
+Focus on the plots for now (code later)
+
+- Are they well designed?
+- How might they be improved?
+
+--
+
+### And...
+
+I need to load a couple of packages
+
+
+```r
+# install these if they are not yet installed on your computer
+
+library(tidyverse)
+library(gapminder)
+```
+ 
+
+---
+class: top, left
+
+## A starting point with `gapminder` data
+
+.panelset[
+.panel[.panel-name[Plot]
+
+
+&lt;img src="Week-3-Principles-of-Data-Visualization_files/figure-html/plot-g1-1.png" width="684" /&gt;
+]
+
+.panel[.panel-name[R Code]
+
+```r
+ggplot(gapminder, aes(y=lifeExp, x=year)) +
+  geom_point()
+```
+]
+]
+
+
+---
+class: top, left
+
+## Some improvements
+
+.panelset[
+.panel[.panel-name[Plot]
+
+&lt;img src="Week-3-Principles-of-Data-Visualization_files/figure-html/plot-g2-1.png" width="684" /&gt;
+]
+
+.panel[.panel-name[R Code]
+
+```r
+ggplot(gapminder, aes(y=lifeExp, x=year)) +
+  geom_jitter() +
+  labs(x="Year", y="Life Expectancy", title="Life Expectancy Over Time")
+```
+]
+]
+
+---
+class: top, left
+
+## More information... an improvement?
+
+.panelset[
+.panel[.panel-name[Plot]
+
+&lt;img src="Week-3-Principles-of-Data-Visualization_files/figure-html/plot-g22-1.png" width="684" /&gt;
+]
+
+.panel[.panel-name[R Code]
+
+```r
+ggplot(gapminder, aes(y=lifeExp, x=year,
+                      color=continent)) +
+  geom_jitter(width = .5, alpha=.4) +
+  guides(color=guide_legend(title="Continent")) +
+  labs(x="Year", y="Life Expectancy", title="Life Expectancy Over Time")
+```
+]
+]
+
+---
+class: top, left
+
+## Could also add trend lines by continent
+
+.panelset[
+.panel[.panel-name[Plot]
+
+&lt;img src="Week-3-Principles-of-Data-Visualization_files/figure-html/plot-g3-1.png" width="684" /&gt;
+]
+
+.panel[.panel-name[R Code]
+
+```r
+ggplot(gapminder, aes(y=lifeExp, x=year, 
+                      color=continent, fill = continent)) +
+  geom_jitter(width = 1, alpha=.4, size=1) +
+  geom_smooth(method = 'loess', formula = 'y ~ x', alpha = .2) +
+  labs(x="Year", y="Life Expectancy", title="Life Expectancy Over Time") +
+  guides(color=guide_legend(title="Continent"),
+         fill=guide_legend(title="Continent"))
+```
+]
+]
+
+
+---
+class: middle, center
+
+## One y-axis is better than two
+
+.pull-left[
+![](bad_two_axes.jpg)
+
+.footnotesize[
+[Source](https://twitter.com/juliagalef/status/846799647167295488)
+]
+]
+
+
+.pull-right[
+![](better_one_axis.jpg)
+
+.footnotesize[
+[Source](https://twitter.com/stuartbuck1/status/847103471006420992)
+]
+]
+
+
+
+
+
+
+---
+class: inverse, middle, center
+
+
+# Thanks!
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
