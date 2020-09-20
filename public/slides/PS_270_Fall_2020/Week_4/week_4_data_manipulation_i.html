@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Data Manipulation with the Tidyverse I</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Evan Morier" />
+    <link href="libs/xaringanExtra-extra-styles-0.2.3/xaringanExtra-extra-styles.css" rel="stylesheet" />
+    <link href="libs/panelset-0.2.3/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset-0.2.3/panelset.js"></script>
+    <link href="libs/animate.css-xaringan-3.7.2/animate.fade.css" rel="stylesheet" />
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Data Manipulation with the Tidyverse I
+### Evan Morier
+### PS 270: Understanding Political Numbers
+### September 2020
+
+---
+
+
+class: middle
+
+# Filtering rows of a data frame
+
+The tidyverse function `filter()` is used to specify the .blue-bold[rows] of a data frame you would like to .blue-bold[keep]
+
+
+```r
+library(tidyverse)
+library(gapminder)
+
+filter(gapminder, country == "Ghana")
+```
+
+```
+## # A tibble: 12 x 6
+##    country continent  year lifeExp      pop gdpPercap
+##    &lt;fct&gt;   &lt;fct&gt;     &lt;int&gt;   &lt;dbl&gt;    &lt;int&gt;     &lt;dbl&gt;
+##  1 Ghana   Africa     1952    43.1  5581001      911.
+##  2 Ghana   Africa     1957    44.8  6391288     1044.
+##  3 Ghana   Africa     1962    46.5  7355248     1190.
+##  4 Ghana   Africa     1967    48.1  8490213     1126.
+##  5 Ghana   Africa     1972    49.9  9354120     1178.
+##  6 Ghana   Africa     1977    51.8 10538093      993.
+##  7 Ghana   Africa     1982    53.7 11400338      876.
+##  8 Ghana   Africa     1987    55.7 14168101      847.
+##  9 Ghana   Africa     1992    57.5 16278738      925.
+## 10 Ghana   Africa     1997    58.6 18418288     1005.
+## 11 Ghana   Africa     2002    58.5 20550751     1112.
+## 12 Ghana   Africa     2007    60.0 22873338     1328.
+```
+
+
+
+
+
+
+
+
+---
+class: top, left
+
+# Filtering
+
+What will this code do?
+
+
+```r
+gap2007 &lt;- filter(gapminder, year == 2007)
+```
+
+--
+
+
+```r
+summary(gap2007)
+```
+
+```
+##         country       continent       year         lifeExp     
+##  Afghanistan:  1   Africa  :52   Min.   :2007   Min.   :39.61  
+##  Albania    :  1   Americas:25   1st Qu.:2007   1st Qu.:57.16  
+##  Algeria    :  1   Asia    :33   Median :2007   Median :71.94  
+##  Angola     :  1   Europe  :30   Mean   :2007   Mean   :67.01  
+##  Argentina  :  1   Oceania : 2   3rd Qu.:2007   3rd Qu.:76.41  
+##  Australia  :  1                 Max.   :2007   Max.   :82.60  
+##  (Other)    :136                                               
+##       pop              gdpPercap      
+##  Min.   :1.996e+05   Min.   :  277.6  
+##  1st Qu.:4.508e+06   1st Qu.: 1624.8  
+##  Median :1.052e+07   Median : 6124.4  
+##  Mean   :4.402e+07   Mean   :11680.1  
+##  3rd Qu.:3.121e+07   3rd Qu.:18008.8  
+##  Max.   :1.319e+09   Max.   :49357.2  
+## 
+```
+
+
+
+---
+class: middle
+
+# Arranging rows of a data frame
+
+The tidyverse function `arrange()` is used to change the order of rows of a data frame
+
+
+```r
+arrange(gap2007, pop)
+```
+
+```
+## # A tibble: 142 x 6
+##    country               continent  year lifeExp     pop gdpPercap
+##    &lt;fct&gt;                 &lt;fct&gt;     &lt;int&gt;   &lt;dbl&gt;   &lt;int&gt;     &lt;dbl&gt;
+##  1 Sao Tome and Principe Africa     2007    65.5  199579     1598.
+##  2 Iceland               Europe     2007    81.8  301931    36181.
+##  3 Djibouti              Africa     2007    54.8  496374     2082.
+##  4 Equatorial Guinea     Africa     2007    51.6  551201    12154.
+##  5 Montenegro            Europe     2007    74.5  684736     9254.
+##  6 Bahrain               Asia       2007    75.6  708573    29796.
+##  7 Comoros               Africa     2007    65.2  710960      986.
+##  8 Reunion               Africa     2007    76.4  798094     7670.
+##  9 Trinidad and Tobago   Americas   2007    69.8 1056608    18009.
+## 10 Swaziland             Africa     2007    39.6 1133066     4513.
+## # ... with 132 more rows
+```
+
+---
+class: middle
+
+## Want it to go in descending order?
+
+
+```r
+arrange(gap2007, desc(pop))
+```
+
+```
+## # A tibble: 142 x 6
+##    country       continent  year lifeExp        pop gdpPercap
+##    &lt;fct&gt;         &lt;fct&gt;     &lt;int&gt;   &lt;dbl&gt;      &lt;int&gt;     &lt;dbl&gt;
+##  1 China         Asia       2007    73.0 1318683096     4959.
+##  2 India         Asia       2007    64.7 1110396331     2452.
+##  3 United States Americas   2007    78.2  301139947    42952.
+##  4 Indonesia     Asia       2007    70.6  223547000     3541.
+##  5 Brazil        Americas   2007    72.4  190010647     9066.
+##  6 Pakistan      Asia       2007    65.5  169270617     2606.
+##  7 Bangladesh    Asia       2007    64.1  150448339     1391.
+##  8 Nigeria       Africa     2007    46.9  135031164     2014.
+##  9 Japan         Asia       2007    82.6  127467972    31656.
+## 10 Mexico        Americas   2007    76.2  108700891    11978.
+## # ... with 132 more rows
+```
+
+---
+class: middle
+
+## Selecting columns of a data frame
+
+The tidyverse function `select()` is used to specify the .blue-bold[columns] of a data frame you would like to keep
+
+
+```r
+select(gap2007, country, lifeExp)
+```
+
+```
+## # A tibble: 142 x 2
+##    country     lifeExp
+##    &lt;fct&gt;         &lt;dbl&gt;
+##  1 Afghanistan    43.8
+##  2 Albania        76.4
+##  3 Algeria        72.3
+##  4 Angola         42.7
+##  5 Argentina      75.3
+##  6 Australia      81.2
+##  7 Austria        79.8
+##  8 Bahrain        75.6
+##  9 Bangladesh     64.1
+## 10 Belgium        79.4
+## # ... with 132 more rows
+```
+
+Note that the arranging we did before is not present because we did not actually save the output of those commands as an object
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

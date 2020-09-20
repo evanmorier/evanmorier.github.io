@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Causal Inference II</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Evan Morier" />
+    <link href="libs/xaringanExtra-extra-styles-0.2.3/xaringanExtra-extra-styles.css" rel="stylesheet" />
+    <link href="libs/panelset-0.2.3/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset-0.2.3/panelset.js"></script>
+    <link href="libs/animate.css-xaringan-3.7.2/animate.fade.css" rel="stylesheet" />
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Causal Inference II
+## Approaches to Causal Inference
+### Evan Morier
+### PS 270: Understanding Political Numbers
+### September 2020
+
+---
+
+
+class: middle 
+
+# Experiments
+
+In social science, an experiment is a study in which the researcher **randomly assigns** units to treatment and control groups
+
+The best way to guarantee that potential outcomes are the same for treatment and control groups is to conduct an experiment
+
+If the researcher **randomly** assigns units to treatment and control groups, the *average potential outcomes* will be the same for both groups
+
+
+
+
+
+
+
+
+
+---
+class: middle
+
+# Why an experiment can identify causal effects
+
+Control group a good counterfactual for treatment group
+
+  - Control group is a good approximation of what *would have happened* to treated units if they had instead been assigned to the control group
+
+---
+class: top, left
+
+# Internal vs External Validity
+
+Experiments have the best internal validity
+  
+  + **Internal validity**: how certain we can be that the effect found in the study exists for the units *in the study*
+
+	+ More confident that there are no confounds biasing estimated treatment effect
+
+--
+
+But, they usually have lower external validity
+
+  + **External validity**: how certain we can be that the effect found in a study applies to units *outside the study*
+  
+	+ Due to unrepresentative samples and unrealistic hypothetical scenarios
+
+
+---
+class: top, left
+
+## External/Internal Validity Learning Check
+
+Research question: How does income affect voter turnout?
+
+Which has higher internal validity? External validity? Why?
+
+1. Experiment on you, random half get money if you vote on Tuesday
+
+2. Look at representative sample of Americans, compare income and whether they voted in last election
+
+--
+
+- (Experiment): high internal validity (randomized treatment and control), low external (not representative sample)
+
+- (Representative sample of Americans): low internal validity (no randomization), high external (representative sample)
+
+
+---
+class: middle
+
+# Observational Studies Using Causal Inference
+
+- Generally try to approximate the experimental ideal in some way
+
+- Goals: 
+
+	+ Eliminate sources of omitted variables bias
+
+	+ Ensure no reverse causality
+
+---
+class: middle
+
+# Natural Experiments
+
+Researchers find a situation where treatment was assigned in a random or close to random way
+
+- But, the researcher did *not* assign units to treatment and control
+
+- Quasi-random assignment of treatment means lower chance of omitted variables biasing estimated treatment effect
+
+---
+class: middle
+
+## Example: Women as Policymakers&lt;sup&gt;1&lt;/sup&gt;
+
+**One research question**: Do female policymakers enact different policies than male ones?
+
+**Importance**: Women are underrepresented in positions of political power globally. Does this make policy more biased towards the concerns of men?
+
+**Potential confounding**: Societal gender equality may cause both election of women and different policy outcomes
+
+.footnotesize[ [1] Chattopadhyay, Raghabendra, and Esther Duflo. 2004. "Women as Policy Makers: Evidence from a Randomized Policy Experiment in India." *Econometrica* 72(5): 1409-43.]
+
+---
+class: middle
+
+## Example: Women as Policymakers
+
+
+.pull-left[
+
+**Research setting**: India, where a law reserves one third of village council chief positions for women
+
+- It is randomly determined which 1/3 are reserved and rotates each term
+
+- Whether a woman holds the seat is the **independent variable/treatment**
+
+**Outcome**: Public goods provision (e.g. roads, drinking water, schools)
+]
+
+.pull-right[
+
+![](indianwomen.jpg)
+
+[Source](https://www.povertyactionlab.org/evaluation/impact-women-policymakers-public-goods-india)
+]
+
+
+
+---
+class: middle
+
+# Results
+
+In areas where a woman was the village council chief (treatment), public goods provision increased
+
+The types of public goods provided in treatment areas tended to be those preferred by most women
+
+Women's political participation also increased in treatment areas
+
+
+---
+class: middle
+
+# Regression discontinuity designs (RDD)
+
+Type of natural experiment
+
+Treatment is assigned based on a continuous "eligibility" variable
+
+- Observations just above the threshold receive the treatment
+
+- For observations close to the cutoff, being just below or just above the cutoff is determined in an as-if random manner
+
+- The observations just below the cutoff are a good counterfactual group for those just above it
+
+
+---
+class: middle, center
+
+## RDD Example: Gangs in El Salvador
+
+&lt;img src="gangs.png" width="90%" /&gt;
+
+
+.footnotesize[[Source](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3477097)]
+
+---
+class: middle
+
+# RDD: Pros and Cons
+
+.pull-left[
+Pros:
+
+- High internal validity
+]
+
+.pull-right[
+Cons:
+
+- They don't always exist for a research question
+
+- Somewhat lower external validity
+
+  + (Estimated effect is for units near the cutoff, but we don't know the exact effect for other units)
+]
+
+---
+class: middle
+
+# Controlling for Observable Confounds
+
+The basic idea:
+
+- Group observations with similar levels of non-treatment observable variables
+
+- Estimate treatment effect within each group, then combine estimates
+
+Note: controlling for confounds is often done using multiple regression, which we will cover later in the semester
+
+---
+class: top, left
+
+## Pros and Cons of Controlling for Confounds
+
+.pull-left[**Pros**
+
+Usually a better strategy for causal inference than simple correlational analysis
+
+Good for research questions where:
+
+- randomized experiments are impossible or unethical (civil war, sex/gender, etc.), and
+
+- no natural experiments exist
+]
+
+.pull-right[**Cons**
+
+Usually can't control for every possible confound
+
+Controlling for some variables *increases* bias ("bad controls", covered later in the semester)
+]
+
+---
+class: middle, center
+
+### Height and Feelings towards one's own Member of Congress (not real data)
+
+
+&lt;img src="week_4_causal_inference_ii_files/figure-html/unnamed-chunk-3-1.png" width="105%" /&gt;
+
+
+
+---
+class: middle, center
+
+# Color by Sex
+
+&lt;img src="week_4_causal_inference_ii_files/figure-html/unnamed-chunk-4-1.png" width="105%" /&gt;
+
+---
+class: middle, center
+
+# Controlling/Adjusting for Sex
+
+&lt;img src="week_4_causal_inference_ii_files/figure-html/unnamed-chunk-5-1.png" width="105%" /&gt;
+
+
+&lt;!-- --- --&gt;
+&lt;!-- class: middle, center --&gt;
+
+&lt;!-- # Life Expectancy and Illiteracy--US States --&gt;
+
+
+&lt;!-- ```{r, echo=FALSE} --&gt;
+&lt;!-- state_info &lt;- state.x77 %&gt;%  --&gt;
+&lt;!--   as_tibble(rownames = "state") %&gt;%  # converts from matrix to tibble/data frame,  --&gt;
+&lt;!--   #turning the rownames of the matrixc into a new variable --&gt;
+&lt;!--   clean_names() %&gt;% # cleans var names (no spaces, etc.) from janitor pkg --&gt;
+&lt;!--   mutate(income_binary =  --&gt;
+&lt;!--            if_else(income &gt; median(income), "High Income", "Low Income")) --&gt;
+&lt;!-- ``` --&gt;
+
+
+&lt;!-- ```{r, echo=FALSE, fig.width=8, fig.asp=.65, out.width="110%"} --&gt;
+&lt;!-- ggplot(state_info, aes(x=illiteracy, y=life_exp)) +  --&gt;
+&lt;!--   geom_point(aes(color = income_binary)) + --&gt;
+&lt;!--   geom_smooth(method = "lm") + --&gt;
+&lt;!--   labs(x="Illiteracy", y="Life Expectancy") --&gt;
+&lt;!-- ``` --&gt;
+
+
+&lt;!-- --- --&gt;
+&lt;!-- class: middle --&gt;
+
+&lt;!-- # Life Expectancy and Illiteracy--Controlling for income --&gt;
+
+&lt;!-- ```{r, echo=FALSE, fig.width=8, fig.asp=.61, out.width="110%"} --&gt;
+&lt;!-- state_info %&gt;%  --&gt;
+&lt;!--   group_by(income_binary) %&gt;%  --&gt;
+&lt;!--   mutate(illiteracy_dm = illiteracy - mean(illiteracy), --&gt;
+&lt;!--          life_exp_dm = life_exp - mean(life_exp)) %&gt;%  --&gt;
+&lt;!--   lm(life_exp ~ illiteracy, .) %&gt;% summary --&gt;
+&lt;!--   ggplot(., aes(x=illiteracy_dm, y=life_exp_dm)) +  --&gt;
+&lt;!--   geom_point() + --&gt;
+&lt;!--   geom_smooth(method = "lm") + --&gt;
+&lt;!--   # facet_wrap(~income_binary) + --&gt;
+&lt;!--   labs(x="Illiteracy", y="Life Expectancy") --&gt;
+&lt;!-- ``` --&gt;
+
+
+&lt;!-- --- --&gt;
+&lt;!-- class: middle --&gt;
+
+&lt;!-- # Think about it --&gt;
+
+&lt;!-- What is a potential confound that hasn't been accounted for in the relationship between illiteracy and life expectancy? --&gt;
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

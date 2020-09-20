@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Causal Inference I</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Evan Morier" />
+    <link href="libs/xaringanExtra-extra-styles-0.2.3/xaringanExtra-extra-styles.css" rel="stylesheet" />
+    <link href="libs/panelset-0.2.3/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset-0.2.3/panelset.js"></script>
+    <link href="libs/animate.css-xaringan-3.7.2/animate.fade.css" rel="stylesheet" />
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Causal Inference I
+### Evan Morier
+### PS 270: Understanding Political Numbers
+### September 2020
+
+---
+
+
+class: middle
+
+# Association
+
+Often, the first thing we look for when trying to determine if X causes Y
+
+- Ex: When X is large, what does Y usually equal?
+
+Also works for a binary&lt;sup&gt;1&lt;/sup&gt; variable:
+
+- Ex: When X = Democrat, what does Y usually equal?
+
+.footnote[[1] Only takes one of two values]
+
+
+
+
+
+
+
+---
+class: middle, center
+
+# Correlation Between Variables
+
+&lt;img src="week_4_causal_inference_i_files/figure-html/unnamed-chunk-1-1.png" width="110%" /&gt;
+
+
+
+---
+class: middle, center
+
+# No Relationship/Correlation
+
+&lt;img src="week_4_causal_inference_i_files/figure-html/unnamed-chunk-2-1.png" width="110%" /&gt;
+
+
+
+---
+class: middle, center
+
+## Example with binary variable
+
+&lt;img src="week_4_causal_inference_i_files/figure-html/unnamed-chunk-3-1.png" width="105%" /&gt;
+
+
+---
+class: middle 
+
+# But...
+
+As you have probably heard, correlation/association doesn't imply causation
+
+Just because there is an association between two variables does not mean one caused the other
+
+.center[
+![](correlation.png)
+]
+
+[xkcd](https://xkcd.com/552/)
+
+
+---
+class: middle 
+
+# Two things to look for 
+
+**Omitted variables bias**
+- When a variable that was omitted (left out) from the analysis is biasing (skewing) the results in one direction or the other 
+  + The omitted variable is often referred to as a *confound*, or *confounding variable*
+
+**Reverse causation**
+- When the hypothesized outcome actually affects the treatment/predictor (opposite direction of effect)
+
+
+---
+class: middle 
+
+# Example: OVB
+
+How does college education affect feelings towards President Trump?
+
+Potential confounds? 
+- Variables that might affect *both* education level and feelings towards Trump
+
+--
+
+Race, family income, state of birth, etc.
+
+If I just looked at how people of different education levels felt about Trump without adjusting/controlling for potential confounds, my results would likely suffer from **omitted variables bias**
+
+
+---
+class: middle 
+
+## Why it's Hard to Estimate Causal Effects
+
+We only observe each unit at one value of the independent variable of interest
+
+We can never observe what would happen in the counterfactual world
+
+- Counterfactual: an imagined alternate universe where only one thing is different 
+  + i.e. whether the treatment was received or not
+
+So, we cannot observe individual causal effects
+
+This is called the **fundamental problem of causal inference**
+
+
+---
+class: middle 
+
+# Counterfactual for Trump Example
+
+Let's say an individual graduated from college
+
+We can observe how she feels about Trump having gone to college
+
+We can *never* know how she would have felt about Trump had she *not* gone to college
+
+And vice versa, for someone who didn't go to college
+
+
+---
+class: middle 
+
+# OK, so what do we do?
+
+Instead of individual causal effects, we can estimate *average* causal effects
+
+- E.g. see how people who did and did not graduate from college differ in their views of Trump on average
+
+What would be the concern with simply comparing college graduates' and non-college graduates' views of Trump?
+
+- Views of Trump might differ for reasons unrelated to college graduation
+  + Different *potential* outcomes for the two groups
+
+
+---
+class: middle 
+
+## Treatment Assignment and Potential Outcomes
+
+Treatment assignment: the way in which units are allocated to treatment and control groups (or different values of the independent variable)
+
+If treatment is *not* randomly assigned, we usually don't know how some units ended up getting the treatment and others didn't
+
+- E.g. we don't know why some people went to college and others didn't
+
+There are likely important differences between units in the treatment and control groups
+
+- They therefore have different **potential outcomes**
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
