@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Research Topics and Data Sources</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Evan Morier" />
+    <link href="libs/xaringanExtra-extra-styles-0.2.3/xaringanExtra-extra-styles.css" rel="stylesheet" />
+    <link href="libs/panelset-0.2.3/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset-0.2.3/panelset.js"></script>
+    <link href="libs/animate.css-xaringan-3.7.2/animate.fade.css" rel="stylesheet" />
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Research Topics and Data Sources
+### Evan Morier
+### PS 270: Understanding Political Numbers
+### September 2020
+
+---
+
+
+class: middle
+
+# Paper topics
+
+How does *X* affect *Y*?
+
+Examples:
+
+- How does a country's electoral system affect voter turnout?
+- How does a voter's level of education affect their vote choice in Ghana?
+- How do tax cuts affect support for Republican governors in California?
+
+
+
+
+
+
+
+---
+
+class: middle
+
+# Keep in mind
+
+Need to have cross-sectional variation, not just over time variation
+
+Is it possible that causality runs in the opposite direction?
+
+Try to come up with a somewhat original research question
+
+- Do quick Google Scholar/UW library searches to see what research has been done on the topic
+
+---
+
+class: middle
+
+# Data for Projects
+
+Helpful to see if data you would need for your projects exists
+
+Should have data available for download (and maybe a codebook)
+
+Need to have at least 50 observations (rows in your data set)
+
+
+---
+class: middle
+
+## *Some* Data Sources on the US
+
+Major U.S. Public Opinion Surveys:
+
+- [American National Election Study](http://www.electionstudies.org/)
+
+- [Current Population Survey ("Voting and Registration Supplement")](https://www.census.gov/topics/public-sector/voting.html)
+
+- [Cooperative Congressional Election Study](https://cces.gov.harvard.edu/)
+
+- [General Social Survey](http://gss.norc.org/)
+
+- [Pew](https://www.pewresearch.org/download-datasets/)
+
+Other: 
+
+- [IPUMS](https://ipums.org/) (census data from US and other countries)
+
+
+---
+class: middle
+
+## International Public Opinion (Polling)
+
+- [Comparative study of electoral systems](http://cses.org/)
+
+- [Eurobarometer](http://ec.europa.eu/commfrontoffice/publicopinion/index.cfm)
+
+- [Afrobarometer](http://www.afrobarometer.org/)
+
+- [Latinobarometro/AmericasBarometer](https://www.vanderbilt.edu/lapop/about-americasbarometer.php)
+
+- [World Values Survey](http://www.worldvaluessurvey.org/wvs.jsp)
+
+- [Asiabarometer](https://www.asiabarometer.org/en/data)
+
+- [Arab Barometer](https://www.arabbarometer.org/survey-data/data-downloads/)
+
+
+---
+class: middle
+
+## Other International Data
+
+[Correlates of War](https://correlatesofwar.org/data-sets)
+
+[AidData](www.aiddata.org)
+
+[World Bank](https://data.worldbank.org/) (can also use ```wbstats``` package)
+
+[IMF](https://www.imf.org/en/Data)
+
+[WHO](https://www.who.int/gho/database/en/)
+
+
+---
+class: middle
+
+## Notes on Data and Research Questions
+
+You should look for data most appropriate for your research question, often from *sources other than these*
+
+- Really cool student projects often use data from at least one source not on this list
+
+  + Cool projects are more fun and rewarding/relevant
+  + Can do a project related to your research or career interests
+
+Try to avoid p-hacking!
+
+- I.e. don't look for relationships in data before you have a research question in mind. The point of the paper is not to find a strong correlation, but to test a hypothesis.
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

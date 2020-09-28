@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Random Variables</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Evan Morier" />
+    <link href="libs/xaringanExtra-extra-styles-0.2.3/xaringanExtra-extra-styles.css" rel="stylesheet" />
+    <link href="libs/panelset-0.2.3/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset-0.2.3/panelset.js"></script>
+    <link href="libs/animate.css-xaringan-3.7.2/animate.fade.css" rel="stylesheet" />
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Random Variables
+### Evan Morier
+### PS 270: Understanding Political Numbers
+### September 2020
+
+---
+
+
+class: middle
+
+# Before we begin...
+
+Packages I'll be using:
+
+
+```r
+library(tidyverse)
+library(gapminder)
+library(socviz)
+```
+
+
+
+
+
+
+---
+class: middle
+
+# Random Variables
+
+.pull-left[
+Random variables are variables, i.e. attributes of the units we are studying
+
+Calling them *random* variables emphasizes that any unit's value of a random variable is the result of some unpredictable factors
+]
+
+.pull-right[
+- Examples: 
+
+  + Heights of students in this class
+  + Whether or not a voter approves of President Trump's job performance
+  + A country's income level
+]
+
+
+---
+class: inverse, middle, center
+
+# Types of Random Variables
+
+---
+class: middle
+
+## Continuous Random Variables
+
+.pull-left[
+Can take theoretically take on infinite (or nearly infinite) different values
+
+- Examples: 
+  + Age
+  + Income
+  + GDP
+  + Tax revenue 
+  + Vote share
+]
+
+.pull-right[
+Presidents' heights
+
+President         | Height (ft/in)          | Height (cm)
+----------------  | ------------------      | ----------
+Lincoln	          | 6 ft 4 in	              | 193 
+L.B. Johnson	    | 6 ft 3 `\(\frac{1}{2}\)` in  | 192
+Trump	            | 6 ft 3 in	              | 191
+Jefferson    	    | 6 ft 2 `\(\frac{1}{2}\)` in  | 189
+Washington	      | 6 ft 2 in	              | 188 
+]
+
+
+---
+class: top, left
+
+## Visualizing Continuous Random Variables: Histograms
+
+.panelset[
+.panel[.panel-name[Plot]
+&lt;img src="week_5_random_variables_files/figure-html/hist1-1.png" width="80%" /&gt;
+
+]
+
+.panel[.panel-name[R Code]
+
+```r
+ggplot(county_data, aes(x=per_gop_2016)) +
+  geom_histogram() +
+  labs(x="Percent of Vote for GOP (2016)", y="Frequency",
+       title="Distribution of Support for GOP") +
+  xlim(c(0, 1.01)) # extend x-axis a little bit
+```
+]
+]
+
+
+---
+class: top, left
+
+## Discrete Random Variables
+
+.pull-left[
+Can only take a finite number of values (often integers)
+
+Examples: 
+
+- No. of heads in 5 flipped coins
+- No. of siblings
+- No. of treaties ratified
+- No. of countries
+]
+
+--
+
+.pull-right[
+Number of countries per continent:
+
+
+```r
+gapminder %&gt;% 
+  filter(year == 2007) %&gt;% 
+  group_by(continent) %&gt;% 
+  count()
+```
+
+```
+## # A tibble: 5 x 2
+## # Groups:   continent [5]
+##   continent     n
+##   &lt;fct&gt;     &lt;int&gt;
+## 1 Africa       52
+## 2 Americas     25
+## 3 Asia         33
+## 4 Europe       30
+## 5 Oceania       2
+```
+]
+
+
+---
+class: top, left
+
+## Visualizing Discrete Random Variables
+
+.panelset[
+.panel[.panel-name[Plot]
+&lt;img src="week_5_random_variables_files/figure-html/discrete-1.png" width="80%" /&gt;
+]
+
+.panel[.panel-name[R Code]
+
+```r
+ggplot(gss_sm, aes(x=childs)) +
+  geom_bar() +
+  labs(x="N. Children", y="Frequency",
+       title="Distribution of Number of Children",
+       caption="Source: General Social Survey (GSS) Respondents")
+```
+]
+]
+
+
+---
+class: middle
+
+# Binary Random Variables
+
+.pull-left[
+
+Special case of discrete random variables 
+
+Can only take one of two values (often defined to be 0 and 1)
+]
+
+.pull-right[
+
+Examples: 
+
+- Coin lands heads
+- Country ever had a civil war
+- Person voted in last election
+
+]
+
+
+---
+class: top, left
+
+## Visualizing the Distribution of a Binary Variable
+
+.panelset[
+.panel[.panel-name[Plot]
+&lt;img src="week_5_random_variables_files/figure-html/binary-1.png" width="80%" /&gt;
+]
+
+.panel[.panel-name[R Code]
+
+```r
+gss_obama &lt;- gss_sm %&gt;% 
+  filter(!is.na(obama))
+
+ggplot(gss_obama, aes(x=factor(obama))) +
+  geom_bar() +
+  labs(x="Voted for Obama", y="Frequency")
+```
+]
+]
+
+
+
+---
+class: top, left
+
+## Categorical Variables
+
+Values are one of a set of groups that do not have a numerical interpretation
+  
+Can be **ordered** (ordinal variables)...
+
+- Ex: Grade level in school (1&lt;sup&gt;st&lt;/sup&gt;}, 2&lt;sup&gt;nd&lt;/sup&gt;, ...), course grades (A, AB, ...),  Likert-type response scales (Strongly agree, agree, ...) 
+
+--
+
+...or **unordered** (nominal)
+
+- Ex: Color, political party, race, religion
+
+
+
+---
+class: top, left
+
+## Visualizing categorical variables
+
+Use barplots to visualize how many observations fall into each category
+
+
+.panelset[
+.panel[.panel-name[Plot]
+&lt;img src="week_5_random_variables_files/figure-html/cat-1.png" width="80%" /&gt;
+]
+
+.panel[.panel-name[R Code]
+
+```r
+county_data %&gt;% 
+  drop_na(census_region) %&gt;%  
+  ggplot(., aes(x=census_region, fill=census_region)) + 
+  geom_histogram(stat = "count") +
+  theme(legend.position = "none") +
+  labs(x="Census Region", y="Frequency")
+```
+]
+]
+
+
+---
+class: top, left
+
+# Learning check
+
+## What type of variable is it?
+
+Number of political parties in a country
+
+Land area
+
+Region
+
+Whether a person has ever voted
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
