@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Sampling</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Evan Morier" />
+    <link href="libs/xaringanExtra-extra-styles-0.2.3.9000/xaringanExtra-extra-styles.css" rel="stylesheet" />
+    <link href="libs/panelset-0.2.3.9000/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset-0.2.3.9000/panelset.js"></script>
+    <link href="libs/animate.css-xaringan-3.7.2/animate.fade.css" rel="stylesheet" />
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Sampling
+### Evan Morier
+### PS 270: Understanding Political Numbers
+### October 2020
+
+---
+
+
+class: middle
+
+# Before we begin...
+
+Packages I'll be using:
+
+
+```r
+library(tidyverse)
+library(infer)
+```
+
+
+
+
+
+
+---
+class: middle, center
+
+# Why sampling is so important
+
+
+.pull-left[
+&lt;br&gt;
+&lt;br&gt;
+&lt;br&gt;
+&lt;br&gt;
+We often want to be able to make claims about a population...
+&lt;br&gt;
+&lt;br&gt;
+...but we can almost never observe every unit within it
+]
+
+.pull-right[
+&lt;img src="img/pop_sample.png" width="75%" /&gt;
+
+]
+
+
+---
+class: middle
+
+# Basic sampling in R
+
+Sampling without replacement
+
+
+```r
+sample(c(1, 2, 3), size = 2, replace = FALSE)
+```
+
+```
+## [1] 3 2
+```
+
+
+---
+class: middle
+
+# Sampling *with* replacement 
+
+The same value can appear twice
+
+You can create a sample of any size
+
+
+```r
+sample(c(1, 2, 3), size = 5, replace = TRUE) 
+```
+
+```
+## [1] 2 2 1 2 3
+```
+
+
+
+---
+class: middle
+
+## Creating a virtual deck of cards
+
+
+
+```r
+deck &lt;- tibble(
+  value = rep(c("2", "3", "4", "5", "6", "7", "8", 
+                "9", "10", "J", "Q", "K", "A"), 4),
+  suit = c(rep("clubs", 13), rep("spades", 13), 
+           rep("hearts", 13), rep("diamonds", 13)),
+  color = if_else(suit %in% c("clubs", "spades"), "black", "red"),
+  red = if_else(color == "red", 1, 0) # want a dummy var later
+)
+```
+
+Pick a card, any card
+
+
+```r
+deck %&gt;% 
+  filter(row_number() == sample(1:52, 1))
+```
+
+```
+## # A tibble: 1 x 4
+##   value suit  color   red
+##   &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt;
+## 1 J     clubs black     0
+```
+
+---
+class: middle
+
+# Sampling from the deck
+
+Let's sample 10 cards and calculate the proportion that are red
+
+
+```r
+deck %&gt;% 
+  rep_sample_n(10, replace = FALSE) %&gt;% 
+  summarise(prop_red = mean(red))
+```
+
+```
+## # A tibble: 1 x 2
+##   replicate prop_red
+##       &lt;int&gt;    &lt;dbl&gt;
+## 1         1      0.6
+```
+
+---
+class: top, left
+
+## Simulating more samples
+
+What if we could sample 10 cards 1,000 times?
+
+
+```r
+set.seed(608) # Ensures same results if you re-run code
+
+sim_1000 &lt;- deck %&gt;% 
+  rep_sample_n(10, replace = FALSE, reps = 1000) %&gt;% 
+  group_by(replicate) %&gt;% 
+  summarise(prop_red = mean(red))
+```
+
+--
+
+
+```r
+sim_1000 %&gt;% 
+  print(n=3)
+```
+
+```
+## # A tibble: 1,000 x 2
+##   replicate prop_red
+##       &lt;int&gt;    &lt;dbl&gt;
+## 1         1      0.4
+## 2         2      0.5
+## 3         3      0.4
+## # ... with 997 more rows
+```
+
+
+
+
+---
+class: middle
+
+## What is the average proportion of red cards?
+
+
+```r
+sim_1000 %&gt;% 
+  summarise(mean_estimate = mean(prop_red))
+```
+
+```
+## # A tibble: 1 x 1
+##   mean_estimate
+##           &lt;dbl&gt;
+## 1         0.497
+```
+
+So, with repeated random sampling our average estimated parameter is very close to the true value of the population parameter
+
+---
+class: middle
+
+## Visualizing the uncertainty
+
+
+```r
+ggplot(sim_1000, aes(x=prop_red)) +
+  geom_histogram(binwidth = .1, center = .5, 
+                 color = "gray") +
+  xlim(c(0, 1.01))
+```
+
+&lt;img src="week_6_sampling_files/figure-html/unnamed-chunk-11-1.png" width="80%" /&gt;
+
+---
+class: top, left
+
+## Quantifying uncertainty
+
+Standard error/deviation of the estimate
+
+
+```r
+sim_1000 %&gt;% 
+  summarise(sd_estimate = sd(prop_red))
+```
+
+```
+## # A tibble: 1 x 1
+##   sd_estimate
+##         &lt;dbl&gt;
+## 1       0.146
+```
+
+
+---
+class: middle
+
+# What about in the real world?
+
+We can usually only observe a sample of a population
+
+- And only **one** sample, not 1,000
+
+So, we can't know with certainty any **population parameters**, like means and proportions
+
+Instead, we estimate them from the sample
+
+So, it's important to know how accurate or reliable our estimates are
+
+
+---
+class: middle
+
+# Bootstrap Resampling
+
+Bootstrap resampling is one way to quantify uncertainty in parameter estimates
+
+More traditional ways involve a lot of math, formulas, and use of probability theory
+
+- Answers are usually almost exactly the same
+
+It works by creating samples that could have plausibly been observed with the same number of observations
+
+- Differences between each bootstrap sample are only due to sampling variation
+
+
+---
+class: top, left
+
+## Quantifying Uncertainty with **Confidence Intervals**
+
+A common way to quantify the uncertainty of an estimate is by constructing a **confidence interval**
+
+A confidence interval tells us the lower and upper bounds we would expect to see for the estimate if we were to repeat our observation many times
+
+--
+
+.black-bold[Example:] Imagine re-running a poll 1,000 times
+
+In a 95% confidence interval (the usual one used by convention), the true value of the parameter would be within the confidence interval in 950 of the polls
+
+---
+class: middle
+
+## Visualizing confidence intervals and the true value 
+
+![From Section 8.5.1 of *ModernDive*](img/ci_ex.png)
+
+
+
+---
+class: top, left
+
+## Bootstrap resampling a draw of 10 cards
+
+**Step 1:** Pick 10 cards at random
+
+
+```r
+set.seed(608)
+
+random_sample_cards &lt;- deck %&gt;%
+  filter(row_number() %in% sample(1:52, 10, replace = FALSE))
+
+random_sample_cards %&gt;% 
+  summarise(mean(red))
+```
+
+```
+## # A tibble: 1 x 1
+##   `mean(red)`
+##         &lt;dbl&gt;
+## 1         0.4
+```
+
+---
+class: top, left
+
+## Bootstrap resampling a draw of 10 cards
+
+**Step 2**: Draw a card from those 10 and replace it, 10 times 
+
+**Step 3**: Repeat **Step 2** 1,000 times, finding the mean number of red cards for each sample
+
+
+```r
+resampled_sims &lt;- random_sample_cards %&gt;% 
+  specify(response = red) %&gt;% 
+  generate(reps = 1000, type = "bootstrap") %&gt;% 
+  calculate(stat = "mean") # group_by sim and calc mean in each
+```
+
+---
+class: middle
+
+## Mean and standard error
+
+The standard deviation of these resampled means quantifies the sampling error
+
+
+```r
+resampled_sims %&gt;% 
+  summarise(mean_prop_red = mean(stat),
+            sd_prop_red = sd(stat))
+```
+
+```
+## # A tibble: 1 x 2
+##   mean_prop_red sd_prop_red
+##           &lt;dbl&gt;       &lt;dbl&gt;
+## 1         0.400       0.156
+```
+The mean is basically the same as our sample statistic/point estimate (.4)
+
+The standard error is about the same as when we actually drew new samples, which is the main  point here
+
+---
+class: middle
+
+## Confidence interval
+
+Let's get the confidence interval too
+
+
+```r
+ci_10_cards &lt;- resampled_sims %&gt;% 
+  get_confidence_interval()
+
+ci_10_cards
+```
+
+```
+## # A tibble: 1 x 2
+##   lower_ci upper_ci
+##      &lt;dbl&gt;    &lt;dbl&gt;
+## 1      0.1      0.7
+```
+
+Same size CI as when we actually drew new samples
+
+- Though centered at .4 here, not .5
+
+
+---
+class: middle
+
+# Larger sample size
+
+
+```r
+set.seed(608)
+
+large_sample_cards &lt;- deck %&gt;% 
+  filter(row_number() %in% sample(1:52, 25, replace = FALSE))
+
+large_sample_cards %&gt;% 
+  summarise(mean(red))
+```
+
+```
+## # A tibble: 1 x 1
+##   `mean(red)`
+##         &lt;dbl&gt;
+## 1        0.48
+```
+
+```r
+large_sims &lt;- large_sample_cards %&gt;% 
+  specify(response = red) %&gt;% 
+  generate(reps = 1000, type = "bootstrap") %&gt;% 
+  calculate(stat = "mean")
+
+large_sims %&gt;% 
+  summarise(mean_estimate = mean(stat),
+            sd_estimate = sd(stat))
+```
+
+```
+## # A tibble: 1 x 2
+##   mean_estimate sd_estimate
+##           &lt;dbl&gt;       &lt;dbl&gt;
+## 1         0.480      0.0977
+```
+
+```r
+large_ci &lt;- large_sims %&gt;% 
+  get_confidence_interval()
+
+large_ci
+```
+
+```
+## # A tibble: 1 x 2
+##   lower_ci upper_ci
+##      &lt;dbl&gt;    &lt;dbl&gt;
+## 1     0.28     0.68
+```
+
+
+---
+class: middle
+
+## Visualizing the confidence intervals
+
+.panelset[
+.panel[.panel-name[R Code]
+
+```r
+ggplot(resampled_sims, aes(x=stat)) +
+  geom_histogram(binwidth = .1, center = .5, 
+                 color = "gray") +
+  xlim(c(0, 1.01)) +
+  shade_confidence_interval(ci_10_cards, color = "blue", fill="blue") +
+  labs(x="Prop. Red", y="Count",
+       title="Sample size: 10")
+```
+
+
+
+```r
+ggplot(large_sims, aes(x=stat)) +
+  geom_histogram(binwidth = .1, center = .5, 
+                 color = "gray") +
+  xlim(c(0, 1.01)) +
+  shade_confidence_interval(large_ci) +
+  labs(x="Prop. Red", y="Count",
+       title="Sample size: 25")
+```
+
+]
+
+.panel[.panel-name[Plot]
+.pull-left[
+&lt;img src="week_6_sampling_files/figure-html/unnamed-chunk-18-1.png" width="360" /&gt;
+]
+
+.pull-right[
+&lt;img src="week_6_sampling_files/figure-html/unnamed-chunk-19-1.png" width="360" /&gt;
+]
+]
+]
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
