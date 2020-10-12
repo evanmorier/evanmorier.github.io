@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Hypothesis Tests</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Evan Morier" />
+    <link href="libs/xaringanExtra-extra-styles-0.2.3.9000/xaringanExtra-extra-styles.css" rel="stylesheet" />
+    <link href="libs/panelset-0.2.3.9000/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset-0.2.3.9000/panelset.js"></script>
+    <link href="libs/animate.css-xaringan-3.7.2/animate.fade.css" rel="stylesheet" />
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Hypothesis Tests
+### Evan Morier
+### PS 270: Understanding Political Numbers
+### October 2020
+
+---
+
+
+class: middle
+
+# Before we begin...
+
+Packages I'll be using:
+
+
+```r
+library(tidyverse)
+library(infer)
+library(here)
+library(janitor)
+```
+
+
+
+
+
+
+&lt;style type="text/css"&gt;
+.tiny .remark-code { /*Change made here*/
+  font-size: 60% !important;
+}
+&lt;/style&gt;
+
+
+
+---
+class: top, left
+
+## Do Public Housing Officials Racially Discriminate?
+
+A recent study&lt;sup&gt;1&lt;/sup&gt; sent emails to public housing officials across the US requesting information on applying for housing assistance 
+
+The requests were exactly the same except for each housing official (recipient), the researchers randomly assigned the name of the "person" who was sending the email
+
+- Names were chosen to signal race: Brett Smith, Emily
+ Smith (White); Tyrone Johnson, Shanice Johnson (Black)&lt;sup&gt;2&lt;/sup&gt;
+
+.footnote[
+[1] Einstein, Katherine Levine, and David M. Glick. "Does Race Affect Access to Government Services? An Experiment Exploring Street‐Level Bureaucrats and Access to Public Housing." *American Journal of Political Science* 61, no. 1 (2017): 100-116.
+
+[2] The study also looked at Hispanic names, which we will leave out for simplicity.
+]
+
+---
+class: middle
+
+# The Study
+
+.pull-left[
+**Importance**: Public housing assistance is a scarce resource, it is important if some people have a harder time receiving it
+
+**Independent variable**: Race of requester
+
+**Dependent variable**: Whether the requester received a response
+
+- Unit of analysis?  
+- Observational or experimental?  
+- Is there an omitted variables bias concern here?
+]
+
+.pull-right[
+![](section8.jpg)
+]
+
+
+---
+class: middle
+name: plot_output
+
+# Partial Results
+
+.pull-left[
+
+&lt;img src="week_7_hypothesis_tests_files/figure-html/plot_simple-1.png" width="360" /&gt;
+
+]
+
+.pull-right[
+Housing officials responded to 57.5% of the emails with White names, compared with 60.7% of the emails with Black names
+
+Can we conclude that housing officials are biased in favor of Black people and against White people?
+]
+
+.footnote[
+[Code for plot](#plotcode)
+]
+
+---
+class: middle
+
+# What is a Hypothesis Test?
+
+A **hypothesis test** is a statistical procedure that evaluates whether an observed association between variables is strong enough that it is unlikely to have arisen by random chance alone
+
+Just because we observe differences between groups doesn't mean those differences are **statistically significant**
+- Random chance due to sampling variation could explain the observed differences
+
+---
+class: middle
+
+# Under the Null
+
+Even where there is no real association between two variables, there will almost never be *exactly zero* association between them in real data
+
+For example:
+
+
+```r
+set.seed(510)
+
+tibble(
+  group = c(rep("a", 500), rep("b", 500)), # create two groups, 500 ea.
+  outcome = rnorm(n = 1000, mean = 10, sd = 2) # random numbers
+) %&gt;% 
+  group_by(group) %&gt;% 
+  summarise(mean = mean(outcome))
+```
+
+```
+## # A tibble: 2 x 2
+##   group  mean
+##   &lt;chr&gt; &lt;dbl&gt;
+## 1 a     10.1 
+## 2 b      9.97
+```
+
+
+---
+class: middle
+
+# The Null Hypothesis
+
+Unfortunately, we cannot directly test the hypotheses we usually care about (that x affects y, for example)
+
+Instead, we must compare our data to the **null hypothesis**, which is that there is *no relationship* between the variables
+
+Strong evidence against the null hypothesis suggests that the **alternative hypothesis** (that a relationship between the variables does exist) may be true
+
+
+---
+class: middle
+
+## Specifying a Null Hypothesis
+
+Usually, null hypotheses involve zero
+
+Example null hypotheses:
+
+- The effect of x on y is zero (two-sided)
+
+- The difference in response rates for x and y is zero (two-sided)
+
+- The effect of x on y is greater than zero (one-sided)
+
+.footnote[
+Note: We almost always conduct a two-sided test (alternative is that the value is *not* equal to zero)
+]
+
+
+---
+class: middle
+
+## Simulation-Based Hypothesis Test
+
+With two groups, testing the null that there is no difference in the mean of a given variable between the groups:
+
+1. Assume there is no relationship between two variables (e.g. race and whether a response was received)
+
+2. Randomly re-assign values of the independent variable and dependent variable (but keep total number of values of each the same)
+
+- Ex: Keep same White and Black rows, but randomly re-assign response variable
+
+Re-calculate the point estimate 
+
+Repeat *n* times
+
+---
+class: middle
+
+## Calculate the Point Estimate
+
+Observed difference in proportions:
+
+
+```r
+obs_diff_prop &lt;- disc_data %&gt;% 
+  specify(formula = response_factor ~ race, success = "received") %&gt;% 
+  calculate(stat = "diff in props", order = c("Black", "White"))
+
+obs_diff_prop
+```
+
+```
+## # A tibble: 1 x 1
+##     stat
+##    &lt;dbl&gt;
+## 1 0.0327
+```
+
+
+---
+class: middle
+
+## Simulate outcomes under the null hypothesis
+
+
+```r
+null_disc &lt;- disc_data %&gt;% 
+  specify(formula = response_factor ~ race, success = "received") %&gt;% 
+  hypothesize(null = "independence") %&gt;% 
+  generate(reps = 1000, type = "permute") %&gt;% 
+  calculate(stat = "diff in props", order = c("Black", "White"))
+
+summary(null_disc)
+```
+
+```
+##    replicate           stat           
+##  Min.   :   1.0   Min.   :-0.1125408  
+##  1st Qu.: 250.8   1st Qu.:-0.0241415  
+##  Median : 500.5   Median : 0.0011155  
+##  Mean   : 500.5   Mean   :-0.0008672  
+##  3rd Qu.: 750.2   3rd Qu.: 0.0263724  
+##  Max.   :1000.0   Max.   : 0.1210860
+```
+
+
+---
+class: top, left
+
+## Visualize Point Estimate and Simulated Estimates
+
+.panelset[
+.panel[.panel-name[R Code]
+
+```r
+visualise(null_disc) +
+  shade_p_value(obs_stat = obs_diff_prop, direction =  "two_sided") +
+  labs(x="Difference in Proportions")
+```
+
+]
+
+.panel[.panel-name[Plot]
+&lt;img src="week_7_hypothesis_tests_files/figure-html/unnamed-chunk-6-1.png" width="504" /&gt;
+]
+]
+
+
+---
+class: middle
+
+# Interpreting p-values
+
+A **p-value** is the proportion of the time that an estimate *at least as extreme* (far from zero) as the observed one would occur under the *null* (i.e. in a world where there is no relationship between the variables)
+
+- Or, the probability that the estimate would have been at least as large as its observed value if every model assumption were correct, including the null hypothesis
+
+A small p-value (below .05 by convention) indicates that the point estimate is far enough from zero that it is statistically distinguishable from zero
+
+- We can then have evidence in favor of *rejecting the null hypothesis* and can say that the estimate is **statistically significant**
+
+
+---
+class: middle
+
+## Common issues
+
+Common **misinterpretations**:
+
+- A p-value is the probability that the null hypothesis is true
+- A significant p-value means we can accept the alternative hypothesis
+
+Also, a significant p-value doesn't tell us how large the effect size is
+
+- Ex: A new drug reduces headache frequency in those suffering from daily headaches by 1 headache per year (p=.04)
+
+
+
+---
+class: middle
+
+# Calculate the P-Value
+
+
+```r
+null_disc %&gt;% 
+  get_p_value(obs_stat = obs_diff_prop, direction = "two_sided")
+```
+
+```
+## # A tibble: 1 x 1
+##   p_value
+##     &lt;dbl&gt;
+## 1   0.448
+```
+
+
+
+---
+class: middle, center
+name: ciplot
+
+# Visualizing the Proportions
+
+&lt;img src="week_7_hypothesis_tests_files/figure-html/ciplotchunk-1.png" width="65%" /&gt;
+
+.footnote[
+[Code for plot](#ciplotcode)
+]
+
+
+---
+class: middle
+
+## Confidence Intervals as Hypothesis Tests
+
+If a 95% confidence interval includes the null (usually zero), the p-value is greater than .05 (not statistically significant)
+
+
+```r
+ci_diff_prop_sims &lt;- disc_data %&gt;% 
+  specify(formula = response_factor ~ race, success = "received") %&gt;% 
+  generate(reps = 1000) %&gt;% 
+  calculate(stat = "diff in props", order = c("Black", "White"))
+
+ci_diff_prop_est &lt;- get_confidence_interval(ci_diff_prop_sims)
+
+ci_diff_prop_est
+```
+
+```
+## # A tibble: 1 x 2
+##   lower_ci upper_ci
+##      &lt;dbl&gt;    &lt;dbl&gt;
+## 1  -0.0369    0.106
+```
+
+
+
+---
+class: top, left
+
+# Visualizing the CI
+
+.panelset[
+.panel[.panel-name[R Code]
+
+```r
+visualise(ci_diff_prop_sims) +
+  shade_confidence_interval(endpoints = ci_diff_prop_est) +
+  labs(title="Bootstrap Simulations of Diff in Props",
+       x="Difference in Proportions", y="Count")
+```
+
+]
+
+.panel[.panel-name[Plot]
+&lt;img src="week_7_hypothesis_tests_files/figure-html/unnamed-chunk-9-1.png" width="504" /&gt;
+]
+]
+
+
+
+---
+class: inverse, middle, center
+
+# Thanks!
+
+
+---
+class: middle
+name: plotcode
+
+### Code for simple plot
+
+
+```r
+disc_data &lt;- read_csv(here("data", "disc_data.csv"))
+
+disc_summary &lt;- disc_data %&gt;% 
+  tabyl(race, response_factor) %&gt;%
+  adorn_percentages()
+
+ggplot(disc_summary, aes(x=race, y=received)) +
+  geom_point() +
+  labs(x="Race", y="Response Rate")
+```
+
+[Go back](#plot_output)
+
+
+---
+class: middle
+name: ciplotcode
+
+#### Code for plot with CIs
+
+.tiny[
+
+
+```r
+ci_black &lt;- disc_data %&gt;%
+  filter(race == "Black") %&gt;% 
+  specify(response = response_factor, success = "received") %&gt;% 
+  generate(reps = 1000) %&gt;% 
+  calculate(stat = "prop") %&gt;% 
+  get_confidence_interval(level = 0.95, type = "percentile")
+
+ci_white &lt;- disc_data %&gt;%
+  filter(race == "White") %&gt;% 
+  specify(response = response_factor, success = "received") %&gt;% 
+  generate(reps = 1000) %&gt;% 
+  calculate(stat = "prop") %&gt;% 
+  get_confidence_interval(level = 0.95, type = "percentile")
+
+disc_plot_data &lt;- disc_data %&gt;% 
+  group_by(race) %&gt;% 
+  summarise(prop_response = sum(response_numeric, na.rm = TRUE) / n()) %&gt;% 
+  mutate(lower_ci = case_when(race == "Black" ~ ci_black$lower_ci,
+                              race == "White" ~ ci_white$lower_ci),
+         upper_ci = case_when(race == "Black" ~ ci_black$upper_ci,
+                              race == "White" ~ ci_white$upper_ci))
+
+ggplot(disc_plot_data, aes(x=race, y=prop_response)) +
+  geom_point() +
+  geom_linerange(aes(x=race,
+                     ymin = lower_ci,
+                     ymax = upper_ci)) +
+  labs(x="Race", y="Response Rate") +
+  lims(y=c(0, 1))
+```
+
+]
+
+[Go back](#ciplot)
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
