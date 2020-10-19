@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Linear Regression I</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Evan Morier" />
+    <link href="libs/xaringanExtra-extra-styles-0.2.3.9000/xaringanExtra-extra-styles.css" rel="stylesheet" />
+    <link href="libs/panelset-0.2.3.9000/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset-0.2.3.9000/panelset.js"></script>
+    <link href="libs/animate.css-xaringan-3.7.2/animate.fade.css" rel="stylesheet" />
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Linear Regression I
+### Evan Morier
+### PS 270: Understanding Political Numbers
+
+---
+
+
+class: middle
+
+# Before we begin...
+
+Packages I'll be using:
+
+
+```r
+library(tidyverse)
+library(broom)
+library(socviz)
+library(gapminder)
+library(here)
+library(janitor)
+library(arsenal)
+library(stargazer)
+```
+
+Data sets I will be using (links below video in Canvas):
+
+`organs.csv`&lt;br&gt;
+`state_data.csv`
+
+
+
+
+
+
+&lt;style type="text/css"&gt;
+.tiny .remark-code { /*Change made here*/
+  font-size: 60% !important;
+}
+&lt;/style&gt;
+
+
+
+---
+class: top, left
+name: orgplotslide1
+
+## What do you think?
+
+.pull-left[
+Look at the following data on organ donation and road fatality rates and try to answer the following questions.
+
+- What do you expect the organ donation rate to be for a country not in the data set with a road fatality rate of 100 per 100,000 people?
+
+- What about one with 140 per 100,000 people?
+
+- How did you come up with these answers?
+]
+
+.pull-right[
+&lt;img src="week_8_regression_i_files/figure-html/orgplotcode-1.png" width="360" /&gt;
+]
+
+
+
+---
+class: top, left
+
+## Drawing a line
+
+.panelset[
+.panel[.panel-name[Plot]
+&lt;img src="week_8_regression_i_files/figure-html/orgplot2code-1.png" width="75%" /&gt;
+]
+
+.panel[.panel-name[R Code]
+
+```r
+ggplot(organs, aes(x=roads, y=donors)) +
+  geom_point() +
+  labs(x="Road Fatalities / 100,000 Pop.", 
+       y="Organ Donations / Mil. Pop.",
+       title="Road Fatalities and Organ Donations") +
+  geom_smooth(method = "lm", se=FALSE)
+```
+]
+]
+
+---
+class: top, left
+
+# Load some data&lt;sup&gt;1&lt;/sup&gt;
+
+
+```r
+state_data &lt;- read_csv(here("data", "state_data.csv"))
+```
+
+The variables we'll be looking at are:
+
+`median_income_thousands`: Median income, thousands of dollars (2015) &lt;br&gt;
+`gop_pp_2p`: GOP share of two-party vote in 2016 presidential election (pct.)
+
+.footnote[
+[1] Original data sources: ```election``` data set from ```socviz``` package and the Current Population Survey (CPS).
+]
+
+
+---
+class: top, left
+
+## Examine the data
+
+.panelset[
+.panel[.panel-name[Code]
+
+````markdown
+```{r, results='asis'}
+sumstatstable &lt;- state_data %&gt;% 
+  tableby(~ median_income_thousands + gop_pp_2p, data = .)
+
+summary(sumstatstable, title = "Summary Statistics")
+```
+````
+]
+
+.panel[.panel-name[Output]
+
+Table: Summary Statistics
+
+|                            | Overall (N=51)  |
+|:---------------------------|:---------------:|
+|**median_income_thousands** |                 |
+|&amp;nbsp;&amp;nbsp;&amp;nbsp;Mean (SD) | 57.011 (9.204)  |
+|&amp;nbsp;&amp;nbsp;&amp;nbsp;Range     | 40.037 - 75.675 |
+|**gop_pp_2p**               |                 |
+|&amp;nbsp;&amp;nbsp;&amp;nbsp;Mean (SD) | 52.014 (12.804) |
+|&amp;nbsp;&amp;nbsp;&amp;nbsp;Range     | 4.308 - 75.702  |
+]
+]
+
+
+---
+class: top, left
+
+## Visualizing the relationship
+
+.panelset[
+.panel[.panel-name[Plot]
+&lt;img src="week_8_regression_i_files/figure-html/relplot-1.png" width="70%" /&gt;
+]
+
+.panel[.panel-name[R Code]
+
+```r
+# plot relationship between income and GOP vote
+ggplot(state_data, aes(x=median_income_thousands, y=gop_pp_2p)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  labs(x="Median Income 2015 (Thousands $)", 
+       y="GOP Pct. 2 Party Vote")
+```
+
+]
+]
+
+
+---
+class: middle
+
+# What regression does
+
+Linear regression formally describes relationships between variables
+
+It gives us the average value of `\(y\)` (outcome/dep. var.) for a given value of `\(x\)` (predictor/ind. var.)
+
+It can be used for both causal inference *and* prediction
+
+
+---
+class: middle
+
+# For now...
+
+One independent variable and one dependent variable
+
+- Later we'll add additional independent variables in multiple regression
+
+Both variables continuous
+
+- Later we'll deal with discrete independent variables (and eventually binary outcome variables)
+
+
+---
+class: middle
+
+# The linear model
+
+`\(y = \alpha + \beta x + \epsilon\)`
+
+
+- `\(y\)` and `\(x\)` are values of the dependent and independent variables for a given observation
+
+- `\(\alpha\)`: the constant/intercept. 
+
+  + The value of `\(y\)` when `\(x=0\)`.
+
+- `\(\beta\)`: the slope coefficient. 
+
+  + When `\(x\)` increases by one, `\(y\)` increases by `\(\beta\)`.
+		
+-	`\(\epsilon\)`: random component/error (averages to **zero** in all regressions)
+		
+		
+---
+class: middle
+
+## The linear equation
+
+When we run a regression, we estimate `\(\alpha\)` and `\(\beta\)`, giving the linear equation:
+
+`\(\hat{y} = \hat{\alpha} + \hat{\beta} x\)`
+	
+-	`\(\hat{y}\)`:  our *prediction* for `\(y\)` (based on the *estimated* values of `\(\alpha\)` and `\(\beta\)`)
+
+-	`\(\hat{y}\)` and `\(y\)` won't be perfectly equal. The difference between them for each particular observation is called a *residual* (abb: `\(\hat{\epsilon}\)`)
+
+---
+class: middle
+
+## A linear equation--visualized
+
+
+
+.left-c[
+`\(\hat{y} = \hat{\alpha} + \hat{\beta} x\)`  
+
+`\(\hat{y} =\)` 61 + 2 `\(\cdot\)`  `\(x\)`
+]
+
+.right-c[
+&lt;img src="week_8_regression_i_files/figure-html/unnamed-chunk-8-1.png" width="105%" /&gt;
+]
+
+
+---
+class: middle
+
+# Regression in R
+
+`lm()` is the main function for regression
+
+Syntax: 
+
+`model_name &lt;- lm(dep_var ~ ind_var, data = df_name)`
+
+Summarizing models:
+
+`tidy(model_name)` or `summary(model_name)`
+
+
+---
+class: middle
+
+
+## Regression example
+
+
+```r
+income_gop_mod &lt;- lm(gop_pp_2p ~ median_income_thousands, 
+                     data = state_data)
+
+tidy(income_gop_mod)
+```
+
+```
+## # A tibble: 2 x 5
+##   term                    estimate std.error statistic  p.value
+##   &lt;chr&gt;                      &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+## 1 (Intercept)               93.1       9.82       9.48 1.15e-12
+## 2 median_income_thousands   -0.720     0.170     -4.24 1.00e- 4
+```
+
+Good for exploratory analysis, but not very pretty
+
+
+---
+class: top, left
+
+## Nicer regression table
+
+.panelset[
+.panel[.panel-name[Output]
+&lt;img src="img/income_gop_mod_img.png" width="90%" /&gt;
+
+How should we interpret this output?
+- Slope, intercept/constant, p-values 
+]
+
+.panel[.panel-name[R Code]
+
+```r
+stargazer(income_gop_mod, type = "html",
+          omit.stat = c("rsq", "adj.rsq", "ser", "f", "aic", "ll"),
+          report = c("vcsp*"),
+          header=FALSE)
+```
+]
+]
+
+
+---
+class: middle
+
+## All models are wrong, some are useful
+
+It's okay if the data don't look exactly like a line
+
+- A linear model is often still a useful approximation
+
+- We'll deal with nonlinear relationships later in the course
+
+
+---
+class: middle
+
+# Practice application
+
+Run a regression of organ donation on the road fatality rate and interpret the output
+
+
+---
+class: top, left
+
+## Solution
+
+.panelset[
+.panel[.panel-name[`tidy()`]
+
+```r
+organs &lt;- read_csv(here("data", "organs.csv"))
+
+orgmod &lt;- lm(donors ~ roads, data = organs)
+
+tidy(orgmod)
+```
+
+```
+## # A tibble: 2 x 5
+##   term        estimate std.error statistic  p.value
+##   &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+## 1 (Intercept)    1.65     3.53       0.467 0.648   
+## 2 roads          0.159    0.0353     4.49  0.000432
+```
+]
+
+.panel[.panel-name[`stargazer()`]
+
+
+```r
+stargazer(orgmod, type = "html",
+          omit.stat = c("rsq", "adj.rsq", "ser", "f", "aic", "ll"),
+          report = c("vcsp*"),
+          header=FALSE)
+```
+
+&lt;img src="img/orgmod_img.png" width="45%" /&gt;
+
+]
+]
+
+---
+class: middle
+
+# Practice questions
+
+- Can we know the true slope ( `\(\beta\)` ) in a regression? 
+
+- What about a particular observation's true residual ( `\(\epsilon_{i}\)` )?
+
+
+---
+class: inverse, middle, center
+
+# Thanks!
+
+
+---
+class: middle
+name: orgplotcodeslide
+
+## Code for organ donation/road fatality plot
+
+
+```r
+organs &lt;- read_csv(here("data", "organs.csv"))
+
+ggplot(organs, aes(x=roads, y=donors)) +
+  geom_point() +
+  labs(x="Road Fatalities / 100,000 Pop.", 
+       y="Organ Donations / Mil. Pop.",
+       title="Road Fatalities and Organ Donations")
+```
+
+[Go back](#orgplotslide1)
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Linear Regression II</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Evan Morier" />
+    <link href="libs/xaringanExtra-extra-styles-0.2.3.9000/xaringanExtra-extra-styles.css" rel="stylesheet" />
+    <link href="libs/panelset-0.2.3.9000/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset-0.2.3.9000/panelset.js"></script>
+    <link href="libs/animate.css-xaringan-3.7.2/animate.fade.css" rel="stylesheet" />
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Linear Regression II
+### Evan Morier
+### PS 270: Understanding Political Numbers
+### October 2020
+
+---
+
+
+class: middle
+
+# Before we begin...
+
+Packages I'll be using:
+
+
+```r
+library(tidyverse)
+library(broom)
+library(gapminder)
+library(infer)
+library(here)
+```
+
+Data sets I will be using (links below video in Canvas):
+
+Data file I'll be using:
+
+`anes.csv`
+
+
+
+
+
+&lt;style type="text/css"&gt;
+.tiny .remark-code { /*Change made here*/
+  font-size: 60% !important;
+}
+&lt;/style&gt;
+
+
+
+---
+class: middle
+
+## Which is Which?
+
+Take a minute to answer the following questions:
+
+-In which model is the estimated intercept ( `\(\hat{\alpha}\)` ) about 49?
+
+-In which model is the estimated slope coefficient ( `\(\hat{\beta}\)` ) about -1? What about 12?
+
+&lt;img src="week_8_regression_ii_files/figure-html/unnamed-chunk-3-1.png" width="720" style="display: block; margin: auto;" /&gt;
+
+
+---
+class: middle, center, inverse
+
+## Regression with dichotomous/binary IV
+
+---
+class: middle
+
+# Data
+
+The `anes.csv` data set contains three variables adapted from the American National Election Survey (ANES)
+
+Respondents I include here were interviewed before the 2016 election
+
+Variables:
+
+- `therm_trump`: Feeling thermometer score for respondent's feelings toward Trump 
+- `Gender`: Male, Female, or Other
+- `female`: 1 if female, 0 otherwise
+
+---
+class: top, left
+
+## Gender and Feelings towards Trump
+
+.panelset[
+.panel[.panel-name[R Code]
+
+```r
+anes_raw &lt;- read_csv(here("data", "anes.csv"))
+
+anes &lt;- anes_raw %&gt;% 
+  drop_na(Gender, therm_trump) 
+
+anes %&gt;% 
+  ggplot(., aes(x=Gender, y=therm_trump)) +
+  geom_jitter(width = .07, height = 2, alpha = .4, size = .5) +
+   stat_summary(fun.y = "mean", colour = "red", size = 2.5, 
+                geom = "point", alpha = .9) +
+  labs(y="Trump Feeling Thermometer",
+       title="Gender and Feelings towards Trump: 2016 Pre-Election")
+```
+]
+
+.panel[.panel-name[Plot]
+&lt;img src="week_8_regression_ii_files/figure-html/unnamed-chunk-4-1.png" width="504" /&gt;
+]
+]
+
+---
+class: middle
+
+# Summarizing the data
+
+
+```r
+gender_summary &lt;- anes %&gt;% 
+  group_by(female) %&gt;% 
+  summarise(mean_therm = mean(therm_trump))
+
+gender_summary
+```
+
+```
+## # A tibble: 2 x 2
+##   female mean_therm
+##    &lt;dbl&gt;      &lt;dbl&gt;
+## 1      0       40.6
+## 2      1       33.9
+```
+
+Is this difference significant?
+
+
+---
+class: middle
+
+# Using regression
+
+Regression can be used to analyze binary independent variables
+
+- Ex: treatment group, college/no college
+
+The model here:
+
+`\(therm\_trump = \alpha + \beta \cdot female + \epsilon\)`
+
+Null hypothesis (H&lt;sub&gt;0&lt;/sub&gt;): female and non-female respondents do not differ in their feeling thermometer scores for candidate Trump
+
+-  H&lt;sub&gt;0&lt;/sub&gt;: `\(\beta = 0\)`
+
+
+---
+class: middle
+
+## Regression Results
+
+
+```r
+trump_female_mod &lt;- lm(therm_trump ~ female, data = anes)
+
+tidy_trump_f_mod &lt;- tidy(trump_female_mod)
+
+tidy_trump_f_mod
+```
+
+```
+## # A tibble: 2 x 5
+##   term        estimate std.error statistic  p.value
+##   &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+## 1 (Intercept)    40.6      0.782     51.9  0.      
+## 2 female         -6.74     1.08      -6.26 4.16e-10
+```
+
+How should we interpret the intercept? 
+
+What about the coefficient on `female`? Its p-value?
+
+
+
+---
+class: middle
+
+## Simulation-Based Inference for Regression
+
+
+```r
+null_distn_slope &lt;- anes %&gt;% 
+  specify(therm_trump ~ female) %&gt;%
+  hypothesize(null = "independence") %&gt;% 
+  generate(reps = 1000, type = "permute") %&gt;% 
+  calculate(stat = "slope")
+```
+
+---
+class: top, left
+
+## Visualizing
+
+.panelset[
+.panel[.panel-name[Plot]
+
+Estimate: -6.7; p-value: 4e-10
+
+&lt;img src="week_8_regression_ii_files/figure-html/reginfer-1.png" width="80%" /&gt;
+]
+
+.panel[.panel-name[R Code]
+
+```r
+visualise(null_distn_slope) +
+  shade_p_value(obs_stat = tidy_trump_f_mod$estimate[2], 
+                direction = "both") +
+  labs(x="Slope of 'female' Coefficient", y="Frequency",
+       title="Distribution of Slope Under Null")
+```
+]
+]
+
+
+
+
+---
+class: top, left
+
+## Beware extrapolating
+
+.panelset[
+.panel[.panel-name[Plot]
+&lt;img src="week_8_regression_ii_files/figure-html/explot-1.png" width="80%" /&gt;
+]
+
+.panel[.panel-name[R Code]
+
+```r
+ggplot(gapminder %&gt;% filter(continent == "Americas"),
+       aes(x=year, y=lifeExp)) +
+  geom_jitter(width = 1) +
+  geom_smooth(method = "lm", fullrange = TRUE) +
+  lims(x = c(1900, 2050), y= c(35, 100))
+```
+]
+]
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
