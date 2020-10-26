@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Multiple Regression</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Evan Morier" />
+    <link href="libs/xaringanExtra-extra-styles-0.2.3.9000/xaringanExtra-extra-styles.css" rel="stylesheet" />
+    <link href="libs/panelset-0.2.3.9000/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset-0.2.3.9000/panelset.js"></script>
+    <link href="libs/animate.css-xaringan-3.7.2/animate.fade.css" rel="stylesheet" />
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Multiple Regression
+### Evan Morier
+### PS 270: Understanding Political Numbers
+### October 2020
+
+---
+
+
+class: middle
+
+# Before we begin...
+
+Packages I'll be using:
+
+
+
+
+
+```r
+library(tidyverse)
+library(here)
+library(foreign)
+library(stargazer)
+library(broom)
+```
+
+Data set: `dev_data.dta`
+
+
+
+&lt;style type="text/css"&gt;
+.regression table {
+  font-size: 11px;     
+}
+&lt;/style&gt;
+
+
+---
+class: middle
+
+# How regression is estimated
+
+Reminder: The difference between the estimated/predicted outcome and the actual outcome for each particular observation is called a *residual* (abb: `\(\hat{\epsilon}\)`)
+
+The regression line is estimated by minimizing the sum of squared residuals
+
+
+---
+class: middle
+
+## Multiple regression setup
+
+`\(y = \alpha + \beta x + \gamma z + ... + \epsilon\)`
+
+Multiple regression is like bivariate regression, but with more independent variables (predictors)
+
+Usually, one is our "treatment" variable
+
+- In which case we call the others **control** variables or **covariates**
+
+
+---
+class: middle
+
+## Why multiple regression?
+
+Prediction
+
+- Including more predictors can often give more accurate predictions
+
+Inference
+
+- Controlling for potential confounds usually reduces omitted variables bias
+
+  + Makes regressions on observational data more plausibly causal
+  
+  + But, usually not enough to make a strong case for causality
+
+
+---
+class: middle
+
+## What multiple regression does
+
+Estimates average/predicted value of dependent variable ($y$) for observed values of *all* independent variables in model
+
+Still minimizing the sum of squared residuals
+
+No longer a line
+
+
+---
+class: top
+
+## Palmer Penguins
+
+&lt;img src="img/penguins.png" width="90%" style="display: block; margin: auto;" /&gt;
+
+
+.footnotesize[
+via [Allison Horst](https://github.com/allisonhorst/palmerpenguins/)
+]
+
+---
+class: top, left
+
+## Visualizing multiple regression in 3D
+
+**Model:** `\(bodymass = \alpha + \beta \cdot billlength + \gamma \cdot flipperlength + \epsilon\)`
+
+&lt;img src="img/pen3dplot.png" width="77%" style="display: block; margin: auto;" /&gt;
+
+
+---
+class: top, left
+
+# Example
+
+&lt;img src="week_9_multiple_regression_files/figure-html/unnamed-chunk-5-1.png" width="90%" style="display: block; margin: auto;" /&gt;
+
+
+---
+class: middle
+
+## Adding a Regression Line
+
+&lt;img src="week_9_multiple_regression_files/figure-html/unnamed-chunk-6-1.png" width="90%" style="display: block; margin: auto;" /&gt;
+
+
+---
+class: middle
+
+## What About Group Variable?
+
+&lt;img src="week_9_multiple_regression_files/figure-html/unnamed-chunk-7-1.png" width="90%" style="display: block; margin: auto;" /&gt;
+
+
+---
+class: middle
+
+##After controlling for group
+
+&lt;img src="week_9_multiple_regression_files/figure-html/unnamed-chunk-8-1.png" width="90%" style="display: block; margin: auto;" /&gt;
+
+
+---
+class: middle
+
+## What happened there?
+
+That is an example of the Simpson's Paradox
+
+- Where controlling for a variable results in a reversed relationship between original two variables
+
+Or, a relationship present within groups reverses when the data are combined
+
+
+---
+class: middle, inverse, center
+
+# To be continued
+
+
+---
+class: middle, inverse, center
+
+# Multiple Regression in R
+
+---
+class: middle
+
+## Real Data Example: Adolescent Fertility Rate
+
+How does education affect adolescent fertility (births per 1,000 women ages 15-19)?
+
+
+```r
+dev_data &lt;- read.dta(here("data", "dev_data.dta"))
+
+head(dev_data)
+```
+
+```
+##      country continent prop_pop_no_ed gdp_per_cap ado_fert smoking_female
+## 1    Algeria    Africa          21.12   4480.7245  10.8084            1.5
+## 2  Argentina  Americas           0.93  10385.9644  63.3154           22.2
+## 3    Austria    Europe           1.29  46858.0433   9.5292           33.3
+## 4 Bangladesh      Asia          31.88    781.1536  90.8034            1.9
+## 5      Benin    Africa          53.91    758.4351 101.2906            1.0
+## 6     Brazil  Americas           9.60  11286.2430  66.8926           12.9
+```
+
+
+---
+class: regression
+
+## Bivariate Regressions
+
+.panelset[
+.panel[.panel-name[R Code]
+
+```r
+ado_fert_ed &lt;- lm(ado_fert ~ prop_pop_no_ed, data = dev_data)
+ado_fert_gdp &lt;- lm(ado_fert ~ gdp_per_cap, data = dev_data)
+
+stargazer(ado_fert_ed, ado_fert_gdp, type = "html",
+          omit.stat = c("rsq", "adj.rsq", "ser", "f", "aic", "ll"),
+          report = c("vcsp*"),
+          header=FALSE)
+```
+
+]
+
+.panel[.panel-name[Results]
+
+&lt;table style="text-align:center"&gt;&lt;tr&gt;&lt;td colspan="3" style="border-bottom: 1px solid black"&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td colspan="2"&gt;&lt;em&gt;Dependent variable:&lt;/em&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;/td&gt;&lt;td colspan="2" style="border-bottom: 1px solid black"&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td colspan="2"&gt;ado_fert&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td&gt;(1)&lt;/td&gt;&lt;td&gt;(2)&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td colspan="3" style="border-bottom: 1px solid black"&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style="text-align:left"&gt;prop_pop_no_ed&lt;/td&gt;&lt;td&gt;1.468&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td&gt;(0.260)&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td&gt;p = 0.00000&lt;sup&gt;***&lt;/sup&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;gdp_per_cap&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;-0.002&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;(0.0003)&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;p = 0.00001&lt;sup&gt;***&lt;/sup&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;Constant&lt;/td&gt;&lt;td&gt;40.012&lt;/td&gt;&lt;td&gt;83.265&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td&gt;(6.399)&lt;/td&gt;&lt;td&gt;(6.265)&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td&gt;p = 0.00000&lt;sup&gt;***&lt;/sup&gt;&lt;/td&gt;&lt;td&gt;p = 0.000&lt;sup&gt;***&lt;/sup&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td colspan="3" style="border-bottom: 1px solid black"&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style="text-align:left"&gt;Observations&lt;/td&gt;&lt;td&gt;54&lt;/td&gt;&lt;td&gt;54&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td colspan="3" style="border-bottom: 1px solid black"&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;em&gt;Note:&lt;/em&gt;&lt;/td&gt;&lt;td colspan="2" style="text-align:right"&gt;&lt;sup&gt;*&lt;/sup&gt;p&lt;0.1; &lt;sup&gt;**&lt;/sup&gt;p&lt;0.05; &lt;sup&gt;***&lt;/sup&gt;p&lt;0.01&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+]
+]
+
+---
+class: regression
+
+## Multiple Regression--Adolescent Fertility
+
+Education conditional on GDP per capita
+
+
+```r
+ado_fert_both &lt;- lm(ado_fert ~ prop_pop_no_ed + gdp_per_cap,
+                    data = dev_data)
+
+tidy(ado_fert_both)
+```
+
+```
+## # A tibble: 3 x 5
+##   term           estimate std.error statistic  p.value
+##   &lt;chr&gt;             &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+## 1 (Intercept)    60.4      7.82          7.72 3.95e-10
+## 2 prop_pop_no_ed  1.05     0.256         4.10 1.49e- 4
+## 3 gdp_per_cap    -0.00127  0.000334     -3.81 3.76e- 4
+```
+
+
+---
+class: middle
+
+## Assumption required for a causal interpretation
+
+The **CIA** (conditional independence assumption):
+
+- There are no variables that affect both the treatment and the outcome (i.e. confounds) once we include the control variables
+
+  + I.e., we have controlled for *every* confounding variable
+  
+Strong assumption!
+
+
+---
+class: middle
+
+## Categorical Independent Variables
+  
+Dummy variables will be added to model for all values/levels of categorical/factor variable except one
+
+- Race, religion, etc.
+
+Experiments with multiple treatment groups
+
+- Dummy variable for each group (usually leave out control)
+
+**Interpretation**: Each of these dummy variable coefficient represents difference from omitted category of the categorical variable, holding all other variables in the model constant 
+
+
+---
+class: regression
+
+## Continent as predictor
+
+
+```r
+levels(dev_data$continent)
+```
+
+```
+## [1] "Africa"   "Americas" "Asia"     "Europe"
+```
+
+```r
+cont_pred_mod &lt;- 
+  lm(ado_fert ~ continent,
+     data = dev_data)
+
+tidy(cont_pred_mod)
+```
+
+```
+## # A tibble: 4 x 5
+##   term              estimate std.error statistic  p.value
+##   &lt;chr&gt;                &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+## 1 (Intercept)           99.7      7.72     12.9  1.49e-17
+## 2 continentAmericas    -29.8     11.2      -2.65 1.08e- 2
+## 3 continentAsia        -58.3     15.4      -3.78 4.22e- 4
+## 4 continentEurope      -82.3     11.7      -7.06 4.91e- 9
+```
+
+`Africa` is the first level in the `continent` factor variable, so it is the **omitted category**
+
+- So all other `continent` coefficients are in relation to `Africa`
+
+
+---
+class: top, left
+
+# Reordering factors
+
+The first level of a categorical variable may not be the best choice for a reference group
+
+Have to decide case-by-case which level makes the most sense (though it doesn't always matter)
+
+--
+
+To change which is the reference category:
+
+
+```r
+dev_data &lt;- dev_data %&gt;% 
+  mutate(continent_releveled = relevel(continent, "Asia"))
+
+levels(dev_data$continent_releveled)
+```
+
+```
+## [1] "Asia"     "Africa"   "Americas" "Europe"
+```
+Note: if the variable is a character variable, you'll need to convert to factor before releveling
+
+
+```r
+df &lt;- df_raw %&gt;% 
+  mutate(var_releveled = relevel(as.factor(char_var)))
+```
+
+
+---
+class: top, left
+
+## Results
+
+.panelset[
+.panel[.panel-name[Releveled]
+
+```r
+cont_relev_mod &lt;- 
+  lm(ado_fert ~ continent_releveled,
+     data = dev_data)
+
+tidy(cont_relev_mod)
+```
+
+```
+## # A tibble: 4 x 5
+##   term                        estimate std.error statistic  p.value
+##   &lt;chr&gt;                          &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+## 1 (Intercept)                     41.4      13.4      3.10 0.00321 
+## 2 continent_releveledAfrica       58.3      15.4      3.78 0.000422
+## 3 continent_releveledAmericas     28.5      15.7      1.82 0.0748  
+## 4 continent_releveledEurope      -24.0      16.0     -1.50 0.139
+```
+]
+
+.panel[.panel-name[Original]
+
+```r
+tidy(cont_pred_mod)
+```
+
+```
+## # A tibble: 4 x 5
+##   term              estimate std.error statistic  p.value
+##   &lt;chr&gt;                &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+## 1 (Intercept)           99.7      7.72     12.9  1.49e-17
+## 2 continentAmericas    -29.8     11.2      -2.65 1.08e- 2
+## 3 continentAsia        -58.3     15.4      -3.78 4.22e- 4
+## 4 continentEurope      -82.3     11.7      -7.06 4.91e- 9
+```
+]
+]
+
+
+---
+class: regression
+
+## Controlling for Continent
+
+
+```r
+ado_fert_wcont &lt;- 
+  lm(ado_fert ~ prop_pop_no_ed + gdp_per_cap + continent,
+     data = dev_data)
+
+tidy(ado_fert_wcont)
+```
+
+```
+## # A tibble: 6 x 5
+##   term                estimate std.error statistic    p.value
+##   &lt;chr&gt;                  &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt;
+## 1 (Intercept)        72.3      13.4         5.39   0.00000213
+## 2 prop_pop_no_ed      0.806     0.321       2.51   0.0155    
+## 3 gdp_per_cap        -0.000787  0.000355   -2.22   0.0313    
+## 4 continentAmericas  -0.441    13.9        -0.0318 0.975     
+## 5 continentAsia     -32.1      16.2        -1.98   0.0533    
+## 6 continentEurope   -37.3      16.7        -2.24   0.0298
+```
+
+Interpretation changes because there are other variables in the model now!
+
+
+---
+class: middle
+
+# Plotting
+
+Don't plot regression w more than 2 IVs, if that
+    
+Can calculate how predicted values change according to one IV holding other variables constant
+
+  + Then plot predictions against that 1 IV
+
+But it's fine to just plot your main IV and DV and report multiple regression in a table
+
+
+---
+class: middle
+
+## Predicting first
+
+
+```r
+summary(dev_data$prop_pop_no_ed)
+```
+
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##    0.00    2.42    7.37   15.68   20.86   74.57
+```
+
+```r
+summary(dev_data$ado_fert)
+```
+
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##    4.73   20.64   61.06   63.04   87.50  181.53
+```
+
+```r
+dataforpred &lt;- tibble(
+  prop_pop_no_ed = seq(0, 75, 1),
+  gdp_per_cap = rep(mean(dev_data$gdp_per_cap), length(prop_pop_no_ed)),
+  continent = "Americas"
+)
+
+predicted &lt;- augment(ado_fert_wcont, newdata = dataforpred,
+                     se_fit = TRUE)
+```
+
+---
+class: top, left
+
+## Plotting predictions
+
+.panelset[
+.panel[.panel-name[R Code]
+
+```r
+ggplot(predicted, aes(x=prop_pop_no_ed)) +
+  geom_point(data = dev_data, aes(y=ado_fert)) +
+  geom_ribbon(aes(ymin=.fitted-1.96*.se.fit, ymax=.fitted+1.96*.se.fit), 
+              alpha = 0.15) +
+  geom_line(aes(y=.fitted)) +
+  labs(x="Prop. pop. w/o Education", y="Adolescent Fertility",
+       title = "Predictions from Multiple Regression",
+       caption = "Note: GDP per capita held at its mean. Continent set to Americas.")
+```
+
+]
+
+.panel[.panel-name[Plot]
+&lt;img src="week_9_multiple_regression_files/figure-html/unnamed-chunk-19-1.png" width="504" style="display: block; margin: auto;" /&gt;
+]
+]
+
+
+---
+class: middle
+
+# Be careful
+
+Don't control for anything that could itself be affected by the treatment variable
+
+- Otherwise, introduce post-treatment bias, treatment variable can't be interpreted causally
+
+Don't interpret your covariates causally (because the treatment is affected by them)
+
+More on this in Week 11
+
+
+---
+class: middle
+
+## Interpretations and inferences
+
+Don't say "Variable `\(x\)` is significant but variable `\(z\)` isn't, so  `\(x\)`  matters more than `\(z\)`"
+	
+- Units of the two variables might differ
+
+- ``The Difference Between 'Significant' and 'Not Significant' is not Itself Statistically Significant" (Gelman and Stern 2006)
+		
+- P-values on coefficients are for *individual* hypothesis tests 
+		
+Don't forget that the interpretation of coefficients changes with added IVs
+
+
+
+---
+class: middle, inverse, center
+
+# Thanks!
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

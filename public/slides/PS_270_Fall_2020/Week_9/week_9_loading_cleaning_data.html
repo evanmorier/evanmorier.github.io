@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Loading and Cleaning Data</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Evan Morier" />
+    <link href="libs/xaringanExtra-extra-styles-0.2.3.9000/xaringanExtra-extra-styles.css" rel="stylesheet" />
+    <link href="libs/panelset-0.2.3.9000/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset-0.2.3.9000/panelset.js"></script>
+    <link href="libs/animate.css-xaringan-3.7.2/animate.fade.css" rel="stylesheet" />
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Loading and Cleaning Data
+### Evan Morier
+### PS 270: Understanding Political Numbers
+### October 2020
+
+---
+
+
+class: middle
+
+# Before we begin...
+
+Packages I'll be using:
+
+
+
+
+
+```r
+library(tidyverse)
+library(foreign)
+library(here)
+library(janitor)
+```
+
+Data files I'll be using:
+
+inflation.csv&lt;br&gt;
+merged_r6_data.sav
+
+
+
+
+&lt;style type="text/css"&gt;
+.tinycode .remark-code { /*Change made here*/
+  font-size: 50% !important;
+}
+&lt;/style&gt;
+
+---
+class: middle, inverse, center
+
+## Loading non-csv data
+
+Most types of data files can be read into R
+
+
+---
+class: middle
+
+## Stata files
+
+.dta (Stata 12 and older):
+
+
+```r
+# from foreign package
+stata_data &lt;- read.dta(here("data","publicdata.dta"))
+```
+
+.dta (Stata 13-15):
+
+
+```r
+# from readstata13 package:
+dat &lt;- read.dta13("path to file.dta")
+```
+
+
+
+---
+class: middle
+
+# Excel
+
+Use readxl package for Excel files (.xls and .xlsx)
+
+
+```r
+xls_data &lt;- read_xls(here("data", "filename.xls"),
+                     sheet = "name of sheet to read")
+
+xlsx_data &lt;- read_xlsx(here("data", "filename.xlsx"),
+                     sheet = "name of sheet to read")
+```
+
+
+---
+class: middle
+
+## More file types
+
+.sav (SPSS)
+
+
+```r
+# from foreign package:
+spss_data &lt;- read.spss(here("data", "filename.sav"), 
+                       to.data.frame = TRUE, use.value.labels = TRUE)
+```
+
+Some others:
+
+
+```r
+tsv_data &lt;- read_tsv(here("data", "filename.tsv"))
+
+dat_data &lt;- read_delim(here("data", "filename.dat"),
+                       delim = "\t")
+
+rds_data &lt;- read_rds(here("data", "filename.rds"))
+```
+
+
+---
+class: middle
+
+# File type tips
+
+Try to download using .csv if given an option
+
+Next best are .tsa, Excel, and .dta
+
+Third choice is .sav (SPSS)
+
+More work for others, e.g. .sps and ASCII
+
+Post in Q&amp;A forum or ask us for help with other uncommon file types
+
+
+---
+class: middle, inverse, center
+
+# Cleaning data
+
+
+---
+class: middle
+
+## Excel is not your Friend
+
+&lt;img src="img/excel_error.PNG" width="90%" style="display: block; margin: auto;" /&gt;
+
+.footnotesize[
+Source: https://www.sciencemag.org/news/2016/08/one-five-genetics-papers-contains-errors-thanks-microsoft-excel
+]
+
+
+---
+class: middle
+
+## Dealing with Excel
+
+Avoid changing data in Excel (and other spreadsheet programs!)
+
+Keep data cleaning in Excel to an absolute minimum
+
+- Safer 
+  + Data cleaning errors in R code can be fixed, and code re-run
+  + Errors in Excel are harder to reverse/catch)
+
+- Excel can introduce errors/change data formats
+
+- More transparent/reproducible to write code
+
+Still can be helpful to open files in Excel before importing them into R!
+
+- Just don't make/save changes
+
+
+---
+class: middle
+
+## Tidy data (long format)
+
+Principles:
+
+- Each row is an observation
+- Each column is a variable
+
+A lot of wild-caught data is not tidy!
+
+Usual problem: variable **values** are stored in column names
+
+
+---
+class: middle
+
+## Pivoting/reshaping
+
+.pull-left[
+We usually want to turn this...
+
+
+```
+## # A tibble: 2 x 3
+##   name  vote_2012 vote_2016
+##   &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;    
+## 1 Bob   Romney    Clinton  
+## 2 Mary  Obama     Clinton
+```
+
+Wide format
+]
+
+.pull-right[
+... into this
+
+
+```
+## # A tibble: 4 x 3
+##   name   year vote   
+##   &lt;chr&gt; &lt;dbl&gt; &lt;chr&gt;  
+## 1 Bob    2012 Romney 
+## 2 Bob    2016 Clinton
+## 3 Mary   2012 Obama  
+## 4 Mary   2016 Clinton
+```
+
+Long format
+]
+
+
+---
+class: middle
+
+## Wide data
+
+
+```r
+inflation_data_raw &lt;- read_csv(here("data", "inflation.csv"),
+                                  skip = 4)
+# Need to skip 4 rows since var names are in row 5
+```
+.tinycode[
+
+```r
+inflation_data_raw %&gt;% 
+  head(n=2)
+```
+
+```
+## # A tibble: 2 x 65
+##   `Country Name` `Country Code` `Indicator Name` `Indicator Code` `1960` `1961`
+##   &lt;chr&gt;          &lt;chr&gt;          &lt;chr&gt;            &lt;chr&gt;             &lt;dbl&gt;  &lt;dbl&gt;
+## 1 Aruba          ABW            Inflation, cons~ FP.CPI.TOTL.ZG       NA     NA
+## 2 Afghanistan    AFG            Inflation, cons~ FP.CPI.TOTL.ZG       NA     NA
+## # ... with 59 more variables: `1962` &lt;dbl&gt;, `1963` &lt;dbl&gt;, `1964` &lt;dbl&gt;,
+## #   `1965` &lt;dbl&gt;, `1966` &lt;dbl&gt;, `1967` &lt;dbl&gt;, `1968` &lt;dbl&gt;, `1969` &lt;dbl&gt;,
+## #   `1970` &lt;dbl&gt;, `1971` &lt;dbl&gt;, `1972` &lt;dbl&gt;, `1973` &lt;dbl&gt;, `1974` &lt;dbl&gt;,
+## #   `1975` &lt;dbl&gt;, `1976` &lt;dbl&gt;, `1977` &lt;dbl&gt;, `1978` &lt;dbl&gt;, `1979` &lt;dbl&gt;,
+## #   `1980` &lt;dbl&gt;, `1981` &lt;dbl&gt;, `1982` &lt;dbl&gt;, `1983` &lt;dbl&gt;, `1984` &lt;dbl&gt;,
+## #   `1985` &lt;dbl&gt;, `1986` &lt;dbl&gt;, `1987` &lt;dbl&gt;, `1988` &lt;dbl&gt;, `1989` &lt;dbl&gt;,
+## #   `1990` &lt;dbl&gt;, `1991` &lt;dbl&gt;, `1992` &lt;dbl&gt;, `1993` &lt;dbl&gt;, `1994` &lt;dbl&gt;,
+## #   `1995` &lt;dbl&gt;, `1996` &lt;dbl&gt;, `1997` &lt;dbl&gt;, `1998` &lt;dbl&gt;, `1999` &lt;dbl&gt;,
+## #   `2000` &lt;dbl&gt;, `2001` &lt;dbl&gt;, `2002` &lt;dbl&gt;, `2003` &lt;dbl&gt;, `2004` &lt;dbl&gt;,
+## #   `2005` &lt;dbl&gt;, `2006` &lt;dbl&gt;, `2007` &lt;dbl&gt;, `2008` &lt;dbl&gt;, `2009` &lt;dbl&gt;,
+## #   `2010` &lt;dbl&gt;, `2011` &lt;dbl&gt;, `2012` &lt;dbl&gt;, `2013` &lt;dbl&gt;, `2014` &lt;dbl&gt;,
+## #   `2015` &lt;dbl&gt;, `2016` &lt;dbl&gt;, `2017` &lt;dbl&gt;, `2018` &lt;dbl&gt;, `2019` &lt;dbl&gt;,
+## #   X65 &lt;lgl&gt;
+```
+]
+
+**What is the problem here?**
+
+
+---
+class: middle
+
+## Using `pivot_longer`
+
+
+```r
+inflation_data &lt;- inflation_data_raw  %&gt;% 
+  pivot_longer(cols = "1960":"2019", 
+               names_to = "year", values_to = "inflation")
+
+names(inflation_data)
+```
+
+```
+## [1] "Country Name"   "Country Code"   "Indicator Name" "Indicator Code"
+## [5] "X65"            "year"           "inflation"
+```
+
+```r
+summary(inflation_data$inflation)
+```
+
+```
+##      Min.   1st Qu.    Median      Mean   3rd Qu.      Max.      NA's 
+##   -18.109     2.436     5.020    21.222     9.927 23773.132      6037
+```
+
+
+---
+class: middle
+
+## Formatting year variable
+
+Add another pipe, mutate to existing code:
+
+
+```r
+inflation_data &lt;- inflation_data_raw  %&gt;% 
+  pivot_longer(cols = "1960":"2019", names_to = "year", values_to = "inflation") %&gt;% 
+  mutate(year = as.numeric(year)) # added this line
+
+summary(inflation_data$year)
+```
+
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##    1960    1975    1990    1990    2004    2019
+```
+
+
+---
+class: middle
+
+## Recoding variables
+
+We often need to **change the values** of variables in a data set, e.g. to:
+
+- Code some obs as NA (e.g. -9 or -99)
+
+- Change codes to values (e.g. 1 `\(\rightarrow\)` Yes, 2 `\(\rightarrow\)` No)
+
+- Change from continuous to categorical/binary variable
+
+- Combine values into categories
+
+- Change variable type (e.g. character `\(\rightarrow\)` numeric)
+
+Especially common when using survey data
+
+- Need codebook!
+
+
+---
+class: middle
+
+## Cleaning Afrobarometer data: reading data file
+
+Read in data
+
+
+
+
+```r
+afro_6_raw &lt;- read.spss(here("data", "merged_r6_data.sav"), 
+                 to.data.frame = TRUE, use.value.labels = TRUE)
+```
+
+Note raw appended to object name
+
+- Loading this data takes time; only want to load it once
+
+- Will save recoded data to new object in new code chunk
+
+
+---
+class: middle
+
+# Reminder
+
+Always look at your data/variables once loaded into R
+
+- View() (or click name in Environment tab)
+
+- `summary(df)` or `summary(df$var)`
+
+- `names(df)`
+
+- `class(df$var)`
+
+- `unique(df$var)`
+
+- `df %&gt;% tabyl(var)`
+
+
+---
+class: middle
+
+## Example: age
+
+.tinycode[
+
+```r
+class(afro_6_raw$Q1) # raw age variable
+```
+
+```
+## [1] "factor"
+```
+
+```r
+summary(afro_6_raw$Q1)
+```
+
+```
+##    Missing        100        101        103        105         18         19 
+##         68          3          1          1          1       1244       1593 
+##         20         21         22         23         24         25         26 
+##       1690       1374       1722       1682       1639       2059       1531 
+##         27         28         29         30         31         32         33 
+##       1696       1988       1610       2135       1180       1871       1175 
+##         34         35         36         37         38         39         40 
+##       1197       1707       1155       1076       1316       1060       1571 
+##         41         42         43         44         45         46         47 
+##        808       1225        795        624       1239        685        664 
+##         48         49         50         51         52         53         54 
+##        817        657       1062        502        723        509        620 
+##         55         56         57         58         59         60         61 
+##        647        487        420        460        327        686        303 
+##         62         63         64         65         66         67         68 
+##        367        324        320        431        185        248        227 
+##         69         70         71         72         73         74         75 
+##        157        322        113        191        111        115        180 
+##         76         77         78         79         80         81         82 
+##        101         67        115         67        145         43         42 
+##         83         84         85         86         87         88         89 
+##         38         32         35         19         21         15         15 
+##         90         91         92         93         94         95         96 
+##         23          1         12          7          1          4          3 
+##         98         99    Refused Don't know 
+##          2          5         26        200
+```
+]
+
+
+---
+class: middle
+
+## New object
+
+
+```r
+afro_6 &lt;- afro_6_raw %&gt;% 
+  mutate(age = as.numeric(as.character(Q1)))
+
+summary(afro_6$age) # all better now
+```
+
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+##   18.00   26.00   34.00   37.27   46.00  105.00     294
+```
+
+
+---
+class: middle
+
+# Gender
+
+
+```r
+summary(afro_6$Q101)
+```
+
+```
+## Missing    Male  Female 
+##       0   26801   27134
+```
+
+```r
+afro_6 &lt;- afro_6_raw %&gt;% 
+  mutate(age = as.numeric(as.character(Q1)),
+         female = if_else(Q101 == "Female", 1, 0))
+         
+summary(afro_6$female)
+```
+
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##  0.0000  0.0000  1.0000  0.5031  1.0000  1.0000
+```
+
+
+---
+class: middle
+
+## A tougher problem
+
+What if we wanted to look at turnout?
+
+
+```r
+afro_6_raw %&gt;% 
+  tabyl(Q21)
+```
+
+```
+##                                                     Q21     n      percent
+##                                                 Missing    14 0.0002595717
+##                         You were not registered to vote  3446 0.0638917215
+##                              You voted in the elections 35774 0.6632798739
+##                                 You decided not to vote  3773 0.0699545750
+##                  You could not find the polling station   501 0.0092889589
+##                          You were prevented from voting   476 0.0088254380
+##                           You did not have time to vote  1514 0.0280708260
+##  You did not vote because your name not in the register   864 0.0160192825
+##                      Did not vote for some other reason  2440 0.0452396403
+##                              You were too young to vote  3549 0.0658014276
+##                             Don't Know / Can't remember   384 0.0071196811
+##                                                 Refused     0 0.0000000000
+##                               Not Asked in this Country  1200 0.0222490034
+```
+
+
+---
+class: middle
+
+## Tip for Recoding Non-Numeric Variable Values
+
+Use `as.character()` (if not a character variable) and `unique()`
+
+Then, copy and paste output, including quotes
+
+.tinycode[
+
+```r
+afro_6_raw %&gt;% 
+  pull(Q21) %&gt;% # no more tibble, just a vector
+  as.character() %&gt;% 
+  unique()
+```
+
+```
+##  [1] "You did not vote because your name not in the register"
+##  [2] "You voted in the elections"                            
+##  [3] "You were not registered to vote"                       
+##  [4] "You decided not to vote"                               
+##  [5] "You were too young to vote"                            
+##  [6] "You did not have time to vote"                         
+##  [7] "You could not find the polling station"                
+##  [8] "You were prevented from voting"                        
+##  [9] "Did not vote for some other reason"                    
+## [10] "Don't Know / Can't remember"                           
+## [11] "Missing"                                               
+## [12] "Not Asked in this Country"
+```
+]
+
+
+---
+class: middle
+
+## Recoding with `case_when()`
+
+
+```r
+afro_6 &lt;- afro_6_raw %&gt;% 
+  mutate(age = as.numeric(as.character(Q1)),
+         voted_raw = Q21,
+         voted = case_when(
+           voted_raw == "You voted in the elections" ~ 1,
+           voted_raw %in% c("Don't Know / Can't remember", 
+                            "Missing", "Not Asked in this Country",
+                            "You were too young to vote") ~ NA_real_,
+           TRUE ~ 0) # everything else set to zero (didn't vote)
+         )
+
+afro_6 %&gt;% tabyl(voted)
+```
+
+```
+##  voted     n    percent valid_percent
+##      0 13014 0.24129044     0.2667459
+##      1 35774 0.66327987     0.7332541
+##     NA  5147 0.09542968            NA
+```
+
+---
+class: middle
+
+## Quick text cleaning functions
+
+`str_to_lower()` and `str_trim()`
+
+
+```r
+ex &lt;- tibble(
+  var = c("Republican", " democrAt", " Independent ")
+)
+
+ex &lt;- ex %&gt;% 
+  mutate(cleaned_var = str_to_lower(var),
+         cleaned_var = str_trim(cleaned_var))
+
+unique(ex$cleaned_var)
+```
+
+```
+## [1] "republican"  "democrat"    "independent"
+```
+
+
+---
+class: middle
+
+## Miscellaneous tips
+
+`if_else()`- Simple variable recoding (True/False for only one condition) 
+
+`case_when()`- Recoding with multiple conditions
+
+`recode()`- Changing a lot of values but not combining them
+
+- E.g. need to correct spelling of some country names
+
+
+---
+class: top, left
+
+## Quick variable name cleaning with `janitor::clean_names()`
+
+
+```r
+df &lt;- df_raw %&gt;% 
+  clean_names()
+```
+
+&lt;img src="img/janitor_clean_names.png" width="90%" style="display: block; margin: auto;" /&gt;
+
+.footnotesize[
+Artwork by @allison_horst
+]
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
