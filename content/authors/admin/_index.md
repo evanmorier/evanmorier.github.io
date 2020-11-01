@@ -71,10 +71,12 @@ email: ""
 #- Visitors
 ---
 
-I am a PhD candidate in comparative politics and research methods at the University of Wisconsin--Madison. In my dissertation research I use novel data on elections in Ghana to examine the relationship between voters' preferences, policy outcomes, and voting behavior. I use a variety of methods to shed light on the topic, including regression discontinuity design (RDD) and panel data anlysis.
+I am a PhD candidate in comparative politics and research methods at the University of Wisconsin--Madison. In my dissertation I use a variety of statistical methods and causal identification strategies to study the relationship between governance, voter preferences, and elections in Ghana.
 
-I have nearly five years experience using R to conduct quantitative analysis and data visualization. I have conducted and presented the results of projects using panel data analysis, machine learning (LSTM and BART), Bayesian measurement methods, and modern identification strategies (RDD and difference-in-differences).
+I have over five years experience using R to conduct quantitative analysis and data visualization. I have conducted and presented the results of projects using panel data analysis, machine learning (LSTM and BART), Bayesian measurement methods, and modern identification strategies (including regression discontinuity and difference-in-differences).
 
-I also have substantial experience teaching quantitative analysis using R at UW--Madison, both in-person and remotely. The course is *Political Science 270: Understanding Political Numbers*, which focuses on two primary learning outcomes: 1) literacy in statistical and causal inference, and 2) using R to conduct statistical analysis/data visualization. I am lecturing this course for the second time in Fall 2020. I served as a teaching assistant for the course twice prior to becoming the instructor of record.
+I analyze a variety of different types of data in my work, including large-scale survey data. I have also collected and compiled novel data sets from administrative records.
+
+I have substantial experience teaching quantitative analysis using R at UW--Madison, both in-person and remotely. The course is *Political Science 270: Understanding Political Numbers*, which focuses on two primary learning outcomes: 1) literacy in statistical and causal inference, and 2) using R to conduct statistical analysis/data visualization. I am lecturing this course for the second time in Fall 2020.
 
 My regional expertise is in the US and Africa and I have conducted field research in Senegal and Ghana. I received my BA in political science from Seattle University (2011). Before beginning my PhD I served as a Peace Corps Volunteer in Madagascar (2011-2013).
