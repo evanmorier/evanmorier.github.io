@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Modelling Non-linear Relationships</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Evan Morier" />
+    <link href="libs/xaringanExtra-extra-styles-0.2.3.9000/xaringanExtra-extra-styles.css" rel="stylesheet" />
+    <link href="libs/panelset-0.2.3.9000/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset-0.2.3.9000/panelset.js"></script>
+    <link href="libs/animate.css-xaringan-3.7.2/animate.fade.css" rel="stylesheet" />
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Modelling Non-linear Relationships
+### Evan Morier
+### PS 270: Understanding Political Numbers
+### November 2020
+
+---
+
+
+class: middle
+
+# Before we begin...
+
+
+
+Packages I'll be using:
+
+
+```r
+library(tidyverse)
+library(broom)
+library(here)
+library(gapminder)
+```
+
+Data set I will be using (available on Canvas):
+
+`gss_recode.csv`
+
+
+
+
+&lt;style type="text/css"&gt;
+.tinycode .remark-code { /*Change made here*/
+  font-size: 55% !important;
+}
+&lt;/style&gt;
+
+---
+class: middle
+
+
+## An Assumption for Regression
+
+
+.pull-left[
+**Linearity**: Outcome/DV is a linear function of predictors/IVs
+
+Basically, you should be able to draw a straight line through a scatterplot without it looking like a poor fit
+
+If this doesn't hold, there is a relatively simple fix
+]
+
+.pull-right[
+&lt;img src="week_10_nonlinearity_files/figure-html/unnamed-chunk-3-1.png" width="90%" /&gt;
+]
+
+
+---
+class: middle
+
+## Age and Income
+
+
+```r
+gss_recode &lt;- read_csv(here("data", "gss_recode.csv"))
+
+ggplot(gss_recode, aes(x=age, y=income_thous)) + 
+  geom_jitter(size=.7, height = 5, alpha = .3) +
+  geom_smooth(size=.7, method = "lm") +
+  labs(y="Income (thousands of $)", x="Age")
+```
+
+&lt;img src="week_10_nonlinearity_files/figure-html/unnamed-chunk-4-1.png" width="70%" style="display: block; margin: auto;" /&gt;
+
+
+---
+class: middle
+
+# Bivariate linear model
+
+
+```r
+lin_income_age &lt;- lm(income_thous ~ age, data = gss_recode)
+tidy(lin_income_age)
+```
+
+```
+## # A tibble: 2 x 5
+##   term        estimate std.error statistic  p.value
+##   &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+## 1 (Intercept)  62.4       2.98      20.9   7.35e-90
+## 2 age           0.0269    0.0577     0.467 6.41e- 1
+```
+
+
+---
+class: middle, inverse, center
+
+# One fix:
+
+## Quadratic terms
+
+
+---
+class: middle
+
+## Regression with Squared Term
+
+`\(y = \alpha + \beta_{1} x + \beta_{2} x^{2} + \epsilon\)`
+
+
+Add `\(x^{2}\)` to model along with `\(x\)` to account for nonlinear relationship
+
+- Must include both `\(x\)` and `\(x^{2}\)` !
+
+Avoid cubic, other higher order terms (i.e. `\(x^{3}\)` )
+
+
+---
+class: middle
+
+## With Squared Term
+
+
+```r
+ggplot(gss_recode, aes(x=age, y=income_thous)) + 
+  geom_jitter(size=.7, height = 5, alpha = .3) +
+  geom_smooth(size=.7, method = "lm", formula = y ~ poly(x, 2)) +
+  labs(y="Income (thousands of dollars)", x="Age")
+```
+
+&lt;img src="week_10_nonlinearity_files/figure-html/unnamed-chunk-6-1.png" width="75%" style="display: block; margin: auto;" /&gt;
+
+
+---
+class: middle
+
+## Model with Quadratic (Squared) Term
+
+
+```r
+sq_term_age_income &lt;- lm(income_thous ~ age + I(age^2),
+                         data = gss_recode)
+tidy(sq_term_age_income)
+```
+
+```
+## # A tibble: 3 x 5
+##   term        estimate std.error statistic  p.value
+##   &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+## 1 (Intercept)  -2.63     7.63       -0.345 7.30e- 1
+## 2 age           2.96     0.323       9.17  9.34e-20
+## 3 I(age^2)     -0.0291   0.00315    -9.23  5.41e-20
+```
+
+
+---
+class: middle
+
+# Caution
+
+Don't interpret coefficients on a variable if you include squared/polynomial terms!
+
+- "Effect of age holding age-squared constant" not interpretable
+
+Can predict for different values of `\(x\)` instead
+
+
+
+```r
+predict(sq_term_age_income, 
+        newdata = tibble(
+          age = c(18, 25, 30, 40, 50, 60, 70, 80)
+          ))
+```
+
+```
+##        1        2        3        4        5        6        7        8 
+## 41.18694 53.13386 59.92080 69.12823 72.51372 70.07727 61.81889 47.73857
+```
+
+
+---
+class: middle, inverse, center
+
+# Second fix: 
+
+## Logging Skewed Variables
+
+---
+class: top, left
+
+## GDP per Capita and Life Expectancy
+
+
+```r
+gapminder_2007 &lt;- gapminder %&gt;% 
+  filter(year == 2007)
+
+ggplot(gapminder_2007, aes(x=gdpPercap, y=lifeExp)) +
+  geom_point(size=.7, alpha = .7) +
+  geom_smooth(size=.7, alpha = .7, method = "lm")
+```
+
+&lt;img src="week_10_nonlinearity_files/figure-html/unnamed-chunk-9-1.png" width="67%" style="display: block; margin: auto;" /&gt;
+
+
+---
+class: middle
+
+## Skewed Variable
+
+
+```r
+ggplot(gapminder_2007, aes(x=gdpPercap)) +
+  geom_histogram()
+```
+
+&lt;img src="week_10_nonlinearity_files/figure-html/unnamed-chunk-10-1.png" width="75%" style="display: block; margin: auto;" /&gt;
+
+
+---
+class: middle
+
+## Log Transformation
+
+
+```r
+ggplot(gapminder_2007, aes(x=log(gdpPercap))) +
+  geom_histogram()
+```
+
+&lt;img src="week_10_nonlinearity_files/figure-html/unnamed-chunk-11-1.png" width="75%" style="display: block; margin: auto;" /&gt;
+
+
+---
+class: top, left
+
+## Logging Skewed Variable
+
+
+```r
+ggplot(gapminder_2007, aes(x=log(gdpPercap), y=log(lifeExp))) +
+  geom_point(size=.7, alpha = .7) +
+  geom_smooth(size=.7, alpha = .7, method = "lm")
+```
+
+&lt;img src="week_10_nonlinearity_files/figure-html/unnamed-chunk-12-1.png" width="75%" style="display: block; margin: auto;" /&gt;
+
+
+---
+class: top, left
+
+## Would a quadratic term have been better?
+.panelset[.panel[.panel-name[Plots]
+.pull-left[
+&lt;img src="week_10_nonlinearity_files/figure-html/logplot-1.png" width="504" /&gt;
+]
+
+.pull-right[
+&lt;img src="week_10_nonlinearity_files/figure-html/quadplot-1.png" width="504" /&gt;
+]
+]
+
+.panel[.panel-name[R Code]
+
+```r
+ggplot(gapminder_2007, aes(x=gdpPercap, y=log(lifeExp))) +
+  geom_point(size=.7, alpha = .7) +
+  geom_smooth(size=.7, alpha = .7, method = "lm",
+              formula =  y ~ log(x)) +
+  labs(title = "Logged")
+```
+
+
+```r
+ggplot(gapminder_2007, aes(x=gdpPercap, y=lifeExp)) +
+  geom_point(size=.7, alpha = .7) +
+  geom_smooth(size=.7, alpha = .7, formula = y ~ poly(x, 2), method = "lm") +
+  labs(title="Quadratic")
+```
+
+]
+]
+
+
+---
+class: top, left
+
+## Residuals vs Fitted Values
+
+.panelset[.panel[.panel-name[Residuals vs Fitted Plots]
+.pull-left[
+&lt;img src="week_10_nonlinearity_files/figure-html/logcode-1.png" width="504" /&gt;
+]
+
+.pull-right[
+&lt;img src="week_10_nonlinearity_files/figure-html/quadcode-1.png" width="504" /&gt;
+]
+]
+
+.panel[.panel-name[R Code]
+
+```r
+logmod &lt;- lm(lifeExp ~ log(gdpPercap), data = gapminder_2007)
+
+# I'm only specifying the newdata argument here as a workaround for 
+# an issue with augment() on logged variables
+logmod_preds &lt;- augment(logmod, newdata = gapminder_2007)
+
+ggplot(logmod_preds, mapping = aes(x = .fitted, y = .resid)) +
+  geom_point(size=.7, alpha = .7) +
+  geom_hline(yintercept = 0) + # horizontal line at avg resid (0)
+  labs(title="Logged")
+```
+
+
+```r
+quadmod &lt;- lm(lifeExp ~ gdpPercap + I(gdpPercap^2), data = gapminder_2007)
+quadmod_preds &lt;- augment(quadmod)
+
+ggplot(quadmod_preds, mapping = aes(x = .fitted, y = .resid)) +
+  geom_point(size=.7, alpha = .7) +
+  geom_hline(yintercept = 0) + # horizontal line at avg resid (0)
+  labs(title="Quadratic")
+```
+]
+
+.panel[.panel-name[Linear Model Plot]
+&lt;img src="week_10_nonlinearity_files/figure-html/lincode-1.png" width="67%" style="display: block; margin: auto;" /&gt;
+]
+
+.panel[.panel-name[R Code Linear]
+
+
+```r
+linmod &lt;- lm(lifeExp ~ gdpPercap, data = gapminder_2007)
+linmod_preds &lt;- augment(linmod)
+
+ggplot(linmod_preds, mapping = aes(x = .fitted, y = .resid)) +
+  geom_point(size=.7, alpha = .7) +
+  geom_hline(yintercept = 0) + # horizontal line at avg resid (0)
+  labs(title="Linear")
+```
+]
+]
+
+
+---
+class: middle
+
+## Big Picture: Regression Assumptions
+
+Many researchers do not adequately test regression assumptions
+
+Main thing to watch out for in your final papers is nonlinearity
+
+- Relationship changes direction/slope at different values of `\(x\)`: **quadratic**
+- Relationship nonlinear but always positive/negative slope: **log**
+
+Issues with residuals that are a bit advanced for this course:
+
+- Non-constant variance (heteroskedasticity)
+
+  + Result: estimated standard errors usually too small
+
+
+---
+class: middle
+
+## What plots get included in written research (and final papers?)
+
+Depends on specific project, but generally:
+
+- One or two main plots, showing relationship between primary IV and DV
+
+- If there is a nonlinear relationship between any IV and the DV:
+  
+  + Discuss, say how you address it 
+
+Don't include purely diagnostic plots (e.g. any plot with residuals)
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

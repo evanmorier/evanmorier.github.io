@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Merging Data</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Evan Morier" />
+    <link href="libs/xaringanExtra-extra-styles-0.2.3.9000/xaringanExtra-extra-styles.css" rel="stylesheet" />
+    <link href="libs/panelset-0.2.3.9000/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset-0.2.3.9000/panelset.js"></script>
+    <link href="libs/animate.css-xaringan-3.7.2/animate.fade.css" rel="stylesheet" />
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Merging Data
+### Evan Morier
+### PS 270: Understanding Political Numbers
+### November 2020
+
+---
+
+
+class: middle
+
+# Before we begin...
+
+
+
+Packages I'll be using (available on Canvas):
+
+
+```r
+library(tidyverse)
+library(here)
+```
+
+Data sets:&lt;br&gt;
+- wigov2018.csv&lt;sup&gt;1&lt;/sup&gt;
+- wipop.csv&lt;sup&gt;2&lt;/sup&gt;
+
+
+.footnote[
+[1] [Source for orig. data](https://elections.wi.gov/index.php/elections-voting/results/2018/fall-general)&lt;br&gt;
+[2] [Source for orig. data](https://doa.wi.gov/Pages/LocalGovtsGrants/Population_Estimates.aspx)
+]
+
+
+
+
+
+&lt;style type="text/css"&gt;
+.tinycode .remark-code { /*Change made here*/
+  font-size: 55% !important;
+}
+&lt;/style&gt;
+
+
+---
+class: middle, inverse, center
+
+# Merging Data
+
+---
+class: middle
+
+## What is merging, and why do we need to do it?
+
+.left-c[
+
+&lt;img src="img/merging.png" width="60%" style="display: block; margin: auto;" /&gt;
+]
+
+.right-c[
+
+Combines multiple data sets
+
+At least one variable is shared by all data sets
+
+Merging increases number of variables
+
+Need it so we're not limited to variables from a single data set
+]
+
+
+---
+class: middle
+
+# Our Data
+
+Population by WI county, year:
+
+
+```r
+wi_pop_raw &lt;- read_csv(here("data", "wipop.csv"))
+```
+
+WI gov election results by county, 2018:
+
+
+```r
+wi_gov_raw &lt;- read_csv(here("data", "wigov2018.csv"))
+```
+
+We'll merge these into one data set at the county level for the year 2018
+
+To merge, we need to make sure county names are identical in both data sets
+
+
+---
+class: middle, inverse, center
+
+# Select, Rename, and Recode Variables
+
+---
+class: middle
+
+# WI Population
+
+.panelset[
+.panel[.panel-name[Df Names]
+.tinycode[
+
+```r
+names(wi_pop_raw)
+```
+
+```
+##  [1] "County Name"              "DOA County Code"         
+##  [3] "FIPS State / County Code" "1970 Census"             
+##  [5] "Final 1/1/1973 Estimate"  "Final 1/1/1974 Estimate" 
+##  [7] "Final 1/1/1975 Estimate"  "Final 1/1/1976 Estimate" 
+##  [9] "Final 1/1/1977 Estimate"  "Final 1/1/1978 Estimate" 
+## [11] "Final 1/1/1979 Estimate"  "Final 1/1/1980 Estimate" 
+## [13] "1980 Census"              "Final 1/1/1981 Estimate" 
+## [15] "Final 1/1/1982 Estimate"  "Final 1/1/1983 Estimate" 
+## [17] "Final 1/1/1984 Estimate"  "Final 1/1/1985 Estimate" 
+## [19] "Final 1/1/1986 Estimate"  "Final 1/1/1987 Estimate" 
+## [21] "Final 1/1/1988 Estimate"  "Final 1/1/1989 Estimate" 
+## [23] "Final 1/1/1990 Estimate"  "1990 Census"             
+## [25] "Final 1/1/1991 Estimate"  "Final 1/1/1992 Estimate" 
+## [27] "Final 1/1/1993 Estimate"  "Final 1/1/1994 Estimate" 
+## [29] "Final 1/1/1995 Estimate"  "Final 1/1/1996 Estimate" 
+## [31] "Final 1/1/1997 Estimate"  "Final 1/1/1998 Estimate" 
+## [33] "Final 1/1/1999 Estimate"  "Final 1/1/2000 Estimate" 
+## [35] "2000 Census"              "Final 1/1/2001 Estimate" 
+## [37] "Final 1/1/2002 Estimate"  "Final 1/1/2003 Estimate" 
+## [39] "Final 1/1/2004 Estimate"  "Final 1/1/2005 Estimate" 
+## [41] "Final 1/1/2006 Estimate"  "Final 1/1/2007 Estimate" 
+## [43] "Final 1/1/2008 Estimate"  "Final 1/1/2009 Estimate" 
+## [45] "Final 1/1/2010 Estimate"  "2010 Census"             
+## [47] "Final 1/1/2011 Estimate"  "Final 1/1/2012 Estimate" 
+## [49] "Final 1/1/2013 Estimate"  "Final 1/1/2014 Estimate" 
+## [51] "Final 1/1/2015 Estimate"  "Final 1/1/2016 Estimate" 
+## [53] "Final 1/1/2017 Estimate"  "Final 1/1/2018 Estimate" 
+## [55] "Final 1/1/2019 Estimate"
+```
+]
+]
+
+.panel[.panel-name[Select, Rename]
+.tinycode[
+
+```r
+wi_pop &lt;- wi_pop_raw %&gt;% 
+  select(county = "County Name",
+         pop_2018 = "Final 1/1/2018 Estimate")
+
+wi_pop
+```
+
+```
+## # A tibble: 73 x 2
+##    county   pop_2018
+##    &lt;chr&gt;       &lt;dbl&gt;
+##  1 Adams       20786
+##  2 Ashland     16030
+##  3 Barron      46336
+##  4 Bayfield    15327
+##  5 Brown      260616
+##  6 Buffalo     13699
+##  7 Burnett     15508
+##  8 Calumet     52658
+##  9 Chippewa    64551
+## 10 Clark       34743
+## # ... with 63 more rows
+```
+]
+]
+]
+
+---
+class: middle
+
+## WI Gov Results--2018
+
+.panelset[
+.panel[.panel-name[Df Names]
+.tinycode[
+
+```r
+names(wi_gov_raw)
+```
+
+```
+##  [1] "County"                                             
+##  [2] "X2"                                                 
+##  [3] "Total Votes Cast"                                   
+##  [4] "Scott Walker \n Rebecca Kleefisch"                  
+##  [5] "Tony Evers \n Mandela  Barnes"                      
+##  [6] "Phillip  Anderson \n Patrick Baird"                 
+##  [7] "Michael J. White \n Tiffany  Anderson"              
+##  [8] "Maggie Turnbull \n Wil Losch"                       
+##  [9] "Arnie Enz \n No Candidate"                          
+## [10] "Ryan Cason (Write-in)\n No Candidate"               
+## [11] "Paul Boucher (Write-in)\nNo Candidate"              
+## [12] "X12"                                                
+## [13] "X13"                                                
+## [14] "Mark S. Grimek (Write-in)\nNo Candidate"            
+## [15] "Jared William Landry (Write-in)\nNo Candidate"      
+## [16] "Robbie Hoffman (Write-in)\nNo Candidate"            
+## [17] "Richard Michael Turtenwald (Write-in)\nNo Candidate"
+## [18] "No Candidate\nCorban Gehler (Write-in)"             
+## [19] "No Candidate\nWilliam Henry Davis III (Write-in)"   
+## [20] "SCATTERING"
+```
+]
+]
+
+.panel[.panel-name[Select, Rename, Mutate]
+.tinycode[
+
+```r
+wi_gov &lt;- wi_gov_raw %&gt;% 
+  select(county = County,
+         walker = "Scott Walker \n Rebecca Kleefisch",
+         evers =  "Tony Evers \n Mandela  Barnes") %&gt;% 
+  mutate(evers_prop_2p = evers / (evers + walker))
+
+wi_gov %&gt;% print(n=3)
+```
+
+```
+## # A tibble: 72 x 4
+##   county  walker evers evers_prop_2p
+##   &lt;chr&gt;    &lt;dbl&gt; &lt;dbl&gt;         &lt;dbl&gt;
+## 1 ADAMS     5209  3892         0.428
+## 2 ASHLAND   2584  4168         0.617
+## 3 BARRON   10655  7623         0.417
+## # ... with 69 more rows
+```
+]
+]
+]
+
+
+---
+class: middle
+
+## Prepare to Merge with `setdiff`
+
+Our best friend when merging is `setdiff()`
+
+- Tells us what values in **x** are *not* in **y**
+
+Usage:
+
+
+```r
+setdiff(x$key_var, y$key_var)
+```
+
+Simple example of how `setdiff` works:
+
+
+```r
+setdiff(c(1, 2), c(2, 3))
+```
+
+```
+## [1] 1
+```
+
+
+---
+class: middle
+
+# Example with `setdiff`
+
+
+```r
+setdiff(wi_pop$county, wi_gov$county)
+```
+
+```
+##  [1] "Adams"       "Ashland"     "Barron"      "Bayfield"    "Brown"      
+##  [6] "Buffalo"     "Burnett"     "Calumet"     "Chippewa"    "Clark"      
+## [11] "Columbia"    "Crawford"    "Dane"        "Dodge"       "Door"       
+## [16] "Douglas"     "Dunn"        "Eau Claire"  "Florence"    "Fond du Lac"
+## [21] "Forest"      "Grant"       "Green"       "Green Lake"  "Iowa"       
+## [26] "Iron"        "Jackson"     "Jefferson"   "Juneau"      "Kenosha"    
+## [31] "Kewaunee"    "La Crosse"   "Lafayette"   "Langlade"    "Lincoln"    
+## [36] "Manitowoc"   "Marathon"    "Marinette"   "Marquette"   "Menominee"  
+## [41] "Milwaukee"   "Monroe"      "Oconto"      "Oneida"      "Outagamie"  
+## [46] "Ozaukee"     "Pepin"       "Pierce"      "Polk"        "Portage"    
+## [51] "Price"       "Racine"      "Richland"    "Rock"        "Rusk"       
+## [56] "St. Croix"   "Sauk"        "Sawyer"      "Shawano"     "Sheboygan"  
+## [61] "Taylor"      "Trempealeau" "Vernon"      "Vilas"       "Walworth"   
+## [66] "Washburn"    "Washington"  "Waukesha"    "Waupaca"     "Waushara"   
+## [71] "Winnebago"   "Wood"        "STATE Total"
+```
+
+
+---
+class: middle
+
+## Fixing so merge is successful
+
+Wow that's everything! Capitalization problem, easy to fix
+
+
+```r
+wi_gov &lt;- wi_gov_raw %&gt;% 
+  select(county = County,
+         walker = "Scott Walker \n Rebecca Kleefisch",
+         evers =  "Tony Evers \n Mandela  Barnes") %&gt;% 
+  mutate(evers_prop_2p = evers/(evers+walker),
+         county = str_to_title(county))
+
+head(wi_gov)
+```
+
+```
+## # A tibble: 6 x 4
+##   county   walker evers evers_prop_2p
+##   &lt;chr&gt;     &lt;dbl&gt; &lt;dbl&gt;         &lt;dbl&gt;
+## 1 Adams      5209  3892         0.428
+## 2 Ashland    2584  4168         0.617
+## 3 Barron    10655  7623         0.417
+## 4 Bayfield   3458  5152         0.598
+## 5 Brown     61424 51724         0.457
+## 6 Buffalo    3463  2385         0.408
+```
+
+
+---
+class: middle
+
+# Let's Try that Again
+
+
+```r
+setdiff(wi_pop$county, wi_gov$county)
+```
+
+```
+## [1] "Fond du Lac" "STATE Total"
+```
+
+
+Also check what values in **y** are not in **x**
+
+
+
+```r
+setdiff(wi_gov$county, wi_pop$county)
+```
+
+```
+## [1] "Fond Du Lac"
+```
+
+
+---
+class: middle
+
+# Last Fix
+
+
+```r
+wi_gov &lt;- wi_gov_raw %&gt;% 
+  select(county = County,
+         walker = "Scott Walker \n Rebecca Kleefisch",
+         evers =  "Tony Evers \n Mandela  Barnes") %&gt;% 
+  mutate(evers_prop_2p = evers/(evers+walker),
+         county = str_to_title(county),
+         county = recode(county,
+                         "Fond Du Lac" = "Fond du Lac"))
+
+setdiff(wi_gov$county, wi_pop$county)
+```
+
+```
+## character(0)
+```
+
+```r
+setdiff(wi_pop$county, wi_gov$county)
+```
+
+```
+## [1] "STATE Total"
+```
+
+
+---
+class: middle, inverse, center
+
+# Merging (finally)
+
+
+---
+class: middle 
+
+## Merge/Join
+
+`left_join()` merges two data frames, keeping everything from first (left) one
+
+- Drops observations in 2nd data frame if they don't match on the **key** variable
+
+Usually use `left_join` to merge
+
+&lt;img src="https://raw.githubusercontent.com/gadenbuie/tidyexplain/master/images/left-join.gif" style="display: block; margin: auto;" /&gt;
+
+
+
+---
+class: middle 
+
+# Let's merge
+
+
+```r
+wi_gov_pop &lt;- left_join(wi_gov, wi_pop, by = "county")
+wi_gov_pop
+```
+
+```
+## # A tibble: 72 x 5
+##    county   walker evers evers_prop_2p pop_2018
+##    &lt;chr&gt;     &lt;dbl&gt; &lt;dbl&gt;         &lt;dbl&gt;    &lt;dbl&gt;
+##  1 Adams      5209  3892         0.428    20786
+##  2 Ashland    2584  4168         0.617    16030
+##  3 Barron    10655  7623         0.417    46336
+##  4 Bayfield   3458  5152         0.598    15327
+##  5 Brown     61424 51724         0.457   260616
+##  6 Buffalo    3463  2385         0.408    13699
+##  7 Burnett    4664  2742         0.370    15508
+##  8 Calumet   14313  8992         0.386    52658
+##  9 Chippewa  15499 11739         0.431    64551
+## 10 Clark      7469  4015         0.350    34743
+## # ... with 62 more rows
+```
+
+---
+class: middle 
+
+# Trust but verify
+
+Make sure your merge worked!
+
+Look at merged data frame, make sure all vars/obs are there
+
+
+---
+class: middle
+
+# Practice Merging
+
+Load the `wi_crashes.csv` data set&lt;sup&gt;1&lt;/sup&gt;
+
+Do any required data prep and merge all variables from this data set with the `wi_gov_pop` data set we created above
+
+Solutions on the next slide
+
+.footnote[
+[1] [Source](https://transportal.cee.wisc.edu/products/CODES/query/index.html)
+]
+
+---
+class: top, left
+
+## Solutions
+
+
+```r
+wi_crashes_raw &lt;- read_csv(here("data", "wi_crashes.csv"))
+
+setdiff(wi_gov_pop$county, wi_crashes_raw$County)
+setdiff(wi_crashes_raw$County, wi_gov_pop$county)
+
+wi_crashes &lt;- wi_crashes_raw %&gt;% 
+  mutate(county = recode(County,
+                         "Fond Du Lac" = "Fond du Lac",
+                         "Manitwoc" = "Manitowoc",
+                         "St Croix" = "St. Croix"))
+
+setdiff(wi_gov_pop$county, wi_crashes$county)
+setdiff(wi_crashes$county, wi_gov_pop$county)
+
+merged_all &lt;- left_join(wi_gov_pop, wi_crashes, by = "county")
+```
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
