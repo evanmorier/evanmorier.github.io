@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Bad Controls</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Evan Morier" />
+    <link href="libs/xaringanExtra-extra-styles-0.2.3.9000/xaringanExtra-extra-styles.css" rel="stylesheet" />
+    <link href="libs/panelset-0.2.3.9000/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset-0.2.3.9000/panelset.js"></script>
+    <link href="libs/animate.css-xaringan-3.7.2/animate.fade.css" rel="stylesheet" />
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Bad Controls
+### Evan Morier
+### PS 270: Understanding Political Numbers
+### November 2020
+
+---
+
+
+class: middle
+
+# Before we begin...
+
+
+
+Packages I'll be using:
+
+
+```r
+library(tidyverse)
+library(broom)
+library(here)
+library(janitor)
+library(stargazer)
+```
+
+
+
+
+Data set I will be using:
+
+The American Community Survey, 2018 (available on [Box](https://uwmadison.box.com/s/w7ip3lu1umtny9hdcgugbypuss4qq8lh))
+
+
+
+
+
+&lt;style type="text/css"&gt;
+.smallcode .remark-code { /*Change made here*/
+  font-size: 75% !important;
+}
+&lt;/style&gt;
+
+---
+class: middle
+
+# Terms (Mostly Review)
+
+**DV/outcome/y**: the variable measuring the phenomenon being explained
+
+**IV/predictor**: variable thought to affect the outcome
+
+**Cause**: when changes in one variable are directly responsible for changes in another
+
+**Treatment**: the main iv/predictor being studied (i.e. the one we want to estimate the causal effect of)
+
+**Bias**: a systematic/regular error in an estimate
+
+
+---
+class: middle
+
+# Quick Review
+
+### Multiple Regression and Causal Inference
+
+What "controlling for" a variable does:
+
+- Estimates effect of treatment on outcome holding controls constant
+
+  + E.g. separate into groups by control variable, compute effect of x on y within groups, combine estimates
+
+- Removes any differences in the IV and DV (treatment and outcome) caused by the control variable(s)
+
+
+---
+class: middle
+
+## A causal diagram (DAG) example
+
+.pull-left[
+
+An omitted variable, z, affects/causes both x and y
+
+To eliminate bias from omitted variable z:
+
+- Control for it (add it as an independent variable in our regression model)
+]
+
+.pull-right[
+&lt;img src="week_11_bad_controls_files/figure-html/unnamed-chunk-4-1.png" width="90%" style="display: block; margin: auto;" /&gt;
+]
+
+
+---
+class: top, left
+
+# Caution
+
+*More control is not always better*&lt;sup&gt;1&lt;/sup&gt;
+
+**Bad Controls**
+
+*Do not control for variables that are themselves affected/caused by the treatment*
+
+- These are also known as post-treatment variables
+
+- They might also be mechanisms (why/how x affects y)
+
+.footnote[
+[1] Angrist, Joshua D., and Jörn-Steffen Pischke. *Mostly Harmless Econometrics: An Empiricist's Companion*. Princeton University Press, 2008.
+]
+
+---
+class: top, left
+
+## Example: Is there sex discrimination in pay in the US?
+
+.pull-left[
+Google has been accused of underpaying its female employees
+
+Google said once you take into account job role and other factors, there was no difference between pay for men and women
+
+.footnote[
+Example adapted from Cunningham, Scott. *Causal Inference: The Mixtape*. Unpublished manuscript (2018). https://www.scunning.com/mixtape.html
+]
+]
+
+.pull-right[
+&lt;img src="img/google_pay.png" width="121" style="display: block; margin: auto;" /&gt;
+
+]
+
+
+---
+class: middle
+
+# Sex and Income DAG
+
+&lt;img src="week_11_bad_controls_files/figure-html/unnamed-chunk-6-1.png" width="504" style="display: block; margin: auto;" /&gt;
+
+Should we control for occupation here?
+
+If gender affects occupation and occupation affects wages...
+
+
+---
+class: middle
+
+## ACS data
+
+Load [ACS 2018 data](https://uwmadison.box.com/s/w7ip3lu1umtny9hdcgugbypuss4qq8lh) (microdata on sex, earnings, and occupation)
+
+
+
+```r
+acs_raw &lt;- read_csv(here("data", "acs_18.csv"))
+```
+
+.smallcode[
+
+```r
+acs_raw %&gt;% 
+  tabyl(SEX)
+```
+
+```
+##  SEX       n   percent
+##    1 1574618 0.4898426
+##    2 1639921 0.5101574
+```
+
+```r
+acs_raw %&gt;% 
+  select(AGE, INCTOT, INCWAGE) %&gt;% 
+  summary()
+```
+
+```
+##       AGE            INCTOT           INCWAGE      
+##  Min.   : 0.00   Min.   : -11200   Min.   :     0  
+##  1st Qu.:21.00   1st Qu.:  11000   1st Qu.:     0  
+##  Median :42.00   Median :  35000   Median : 24000  
+##  Mean   :41.63   Mean   :1691919   Mean   :203268  
+##  3rd Qu.:61.00   3rd Qu.:  93000   3rd Qu.: 88000  
+##  Max.   :96.00   Max.   :9999999   Max.   :999999
+```
+]
+
+
+---
+class: top, left
+
+# Data cleaning
+
+.panelset[
+
+.panel[.panel-name[Code]
+
+```r
+set.seed(608) # set random num gen bc will sample
+
+acs &lt;- acs_raw %&gt;% 
+  sample_n(10000) %&gt;%  # keep random 10,000 rows for manageable size
+  filter(AGE &gt;= 18 &amp; INCTOT &gt;= 0) %&gt;% # only adults, no negative income
+  mutate(
+    income_total = if_else(INCTOT %in% c(9999999), NA_real_, INCTOT),
+    income_wage = if_else(INCWAGE %in% c(999998, 9999999), NA_real_, INCWAGE),
+    female = if_else(SEX == 2, 1, 0)) %&gt;% 
+  select(age = AGE, income_total, income_wage, female, occupation = OCC)
+
+summary(acs)
+```
+
+]
+
+.panel[.panel-name[Output]
+
+```
+##       age         income_total      income_wage         female      
+##  Min.   :18.00   Min.   :      0   Min.   :     0   Min.   :0.0000  
+##  1st Qu.:34.00   1st Qu.:  10000   1st Qu.:     0   1st Qu.:0.0000  
+##  Median :51.00   Median :  26600   Median : 10800   Median :1.0000  
+##  Mean   :50.22   Mean   :  44564   Mean   : 31827   Mean   :0.5223  
+##  3rd Qu.:65.00   3rd Qu.:  55000   3rd Qu.: 44700   3rd Qu.:1.0000  
+##  Max.   :96.00   Max.   :1096000   Max.   :660000   Max.   :1.0000  
+##    occupation  
+##  Min.   :   0  
+##  1st Qu.:   0  
+##  Median :2825  
+##  Mean   :3117  
+##  3rd Qu.:5000  
+##  Max.   :9920
+```
+
+
+
+]
+
+]
+
+
+---
+class: top, left
+
+## Wages and Sex
+
+.panelset[.panel[.panel-name[Regressions]
+
+Bivariate Regression of wages on gender
+
+
+```r
+sex_earnings_bv &lt;- lm(income_wage ~ female, data = acs)
+```
+
+Controlling for Occupation
+
+
+```r
+sex_earnings_occ &lt;- lm(income_wage ~ female + factor(occupation),
+                       data = acs)
+```
+]
+
+.panel[.panel-name[Results]
+
+
+&lt;table style="text-align:center"&gt;&lt;tr&gt;&lt;td colspan="3" style="border-bottom: 1px solid black"&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td colspan="2"&gt;&lt;em&gt;Dependent variable:&lt;/em&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;/td&gt;&lt;td colspan="2" style="border-bottom: 1px solid black"&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td colspan="2"&gt;income_wage&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td&gt;(1)&lt;/td&gt;&lt;td&gt;(2)&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td colspan="3" style="border-bottom: 1px solid black"&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style="text-align:left"&gt;female&lt;/td&gt;&lt;td&gt;-18,474.300&lt;/td&gt;&lt;td&gt;-10,265.330&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td&gt;p = 0.000&lt;/td&gt;&lt;td&gt;p = 0.000&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;Constant&lt;/td&gt;&lt;td&gt;41,476.560&lt;/td&gt;&lt;td&gt;6,357.728&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td&gt;p = 0.000&lt;/td&gt;&lt;td&gt;p = 0.00001&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td colspan="3" style="border-bottom: 1px solid black"&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style="text-align:left"&gt;Observations&lt;/td&gt;&lt;td&gt;7,959&lt;/td&gt;&lt;td&gt;7,959&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td colspan="3" style="border-bottom: 1px solid black"&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+]
+
+.panel[.panel-name[Stargazer Code]
+
+```r
+stargazer(sex_earnings_bv, sex_earnings_occ,
+          type = "html", 
+          omit = "^factor", # omit vars that start with "factor"
+          omit.stat = c("rsq", "adj.rsq", "ser", "f", "aic", "ll"),
+          report = c("vcp"), # show var names, coef estimates, and p-values
+          header=FALSE, omit.table.layout = "n")
+```
+
+Don't forget to put `results='asis'` in the R code chunk header
+
+]
+]
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

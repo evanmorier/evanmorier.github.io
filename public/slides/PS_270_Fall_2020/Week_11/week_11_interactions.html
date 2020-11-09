@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Interaction Effects</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Evan Morier" />
+    <link href="libs/xaringanExtra-extra-styles-0.2.3.9000/xaringanExtra-extra-styles.css" rel="stylesheet" />
+    <link href="libs/panelset-0.2.3.9000/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset-0.2.3.9000/panelset.js"></script>
+    <link href="libs/animate.css-xaringan-3.7.2/animate.fade.css" rel="stylesheet" />
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Interaction Effects
+### Evan Morier
+### PS 270: Understanding Political Numbers
+### November 2020
+
+---
+
+
+class: middle
+
+# Before we begin...
+
+
+
+Packages I'll be using:
+
+
+```r
+library(tidyverse)
+library(broom)
+library(here)
+library(foreign)
+library(janitor)
+```
+
+
+
+
+Data sets I will be using (available on Canvas):
+
+`anes_2p.csv`  
+`smoking.csv`
+
+
+
+
+&lt;style type="text/css"&gt;
+.smallcode .remark-code { /*Change made here*/
+  font-size: 75% !important;
+}
+&lt;/style&gt;
+
+
+
+---
+class: middle
+
+## What are interaction effects?
+
+"Does the effect of x depend on an observation's value of z?"
+
+"Is the effect of x different for different values of z?"
+
+Often, x is our main independent variable and z is a control/covariate (e.g. sex, age)
+
+- But, some experiments with multiple treatments involve interactions between two treatment variables, not a treatment and a control
+
+
+---
+class: middle
+
+## Example: Education and views towards feminists
+
+Data (on Canvas):
+
+
+```r
+anes_2p &lt;- read_csv(here("data", "anes_2p.csv"))
+```
+
+Only education (no party):
+
+
+```r
+anes_2p %&gt;% 
+  drop_na() %&gt;% 
+  group_by(Education) %&gt;% 
+  summarise(therm_feminists = mean(therm_feminists, na.rm = TRUE))
+```
+
+```
+## # A tibble: 2 x 2
+##   Education            therm_feminists
+##   &lt;chr&gt;                          &lt;dbl&gt;
+## 1 College Graduate                61.5
+## 2 Non-College Graduate            54.1
+```
+
+---
+class: middle
+
+## Interaction between education and party
+
+Does the effect of a person's education on their view of feminists depend on what their political party is?
+
+
+```r
+group_means &lt;- anes_2p %&gt;% 
+  drop_na() %&gt;% 
+  group_by(Education, party_id) %&gt;% 
+  summarise(therm_feminists = mean(therm_feminists))
+
+group_means
+```
+
+```
+## # A tibble: 4 x 3
+## # Groups:   Education [2]
+##   Education            party_id   therm_feminists
+##   &lt;chr&gt;                &lt;chr&gt;                &lt;dbl&gt;
+## 1 College Graduate     Democrat              75.7
+## 2 College Graduate     Republican            44.5
+## 3 Non-College Graduate Democrat              63.5
+## 4 Non-College Graduate Republican            43.1
+```
+
+
+---
+class: middle
+
+## Modelling interactions with multiple regression
+
+`$$y = \alpha + \beta_{1} treat \times z + \beta_{2} treat + \beta_{3} z + \epsilon$$`
+
+To model an interaction effect:
+
+- The independent variables thought to interact are multiplied together
+
+  + This happens within the `lm()` command (using an "*"), no need to `mutate()`
+
+- THe uninteracted terms remain in the model
+
+---
+class: middle
+
+## Formally testing interaction between education and party
+
+`\(View\ Feminists = \alpha + \beta_{1} Education \times Party\ ID + \\ \beta_{2} Education + \beta_{3} Party\ ID + \epsilon\)`
+
+.smallcode[
+
+```r
+fem_mod &lt;- lm(therm_feminists ~ Education*party_id, 
+            data = anes_2p)
+tidy(fem_mod)
+```
+
+```
+## # A tibble: 4 x 5
+##   term                                     estimate std.error statistic  p.value
+##   &lt;chr&gt;                                       &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+## 1 (Intercept)                                  75.6      1.01     74.6  0.      
+## 2 EducationNon-College Graduate               -12.1      1.34     -9.08 2.25e-19
+## 3 party_idRepublican                          -31.1      1.50    -20.7  3.11e-87
+## 4 EducationNon-College Graduate:party_idR~     10.5      1.98      5.31 1.19e- 7
+```
+]
+
+
+---
+class: middle
+
+## Predictions from model
+
+.smallcode[
+
+
+```r
+fempred &lt;- broom::augment(fem_mod, se_fit = TRUE) %&gt;% 
+  distinct(.fitted, .keep_all = TRUE) %&gt;% 
+  mutate(ymin = .fitted - (1.96*.se.fit), # for CI
+         ymax = .fitted + (1.96*.se.fit)) %&gt;% # for CI
+  select(-therm_feminists)
+
+group_means_ses &lt;- left_join(group_means, fempred, by = c("Education", "party_id"))
+
+group_means_ses
+```
+
+```
+## # A tibble: 4 x 13
+## # Groups:   Education [2]
+##   Education party_id therm_feminists .rownames .fitted .se.fit .resid .std.resid
+##   &lt;chr&gt;     &lt;chr&gt;              &lt;dbl&gt; &lt;chr&gt;       &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;      &lt;dbl&gt;
+## 1 College ~ Democrat            75.7 5            75.6   1.01    9.39      0.407
+## 2 College ~ Republi~            44.5 2            44.5   1.11    5.48      0.238
+## 3 Non-Coll~ Democrat            63.5 3            63.5   0.873 -13.5      -0.584
+## 4 Non-Coll~ Republi~            43.1 1            42.9   0.951   7.11      0.308
+## # ... with 5 more variables: .hat &lt;dbl&gt;, .sigma &lt;dbl&gt;, .cooksd &lt;dbl&gt;,
+## #   ymin &lt;dbl&gt;, ymax &lt;dbl&gt;
+```
+]
+
+
+---
+class: top, left
+
+## Visualizing model results
+
+.panelset[.panel[.panel-name[Plot]
+&lt;img src="week_11_interactions_files/figure-html/vizmodcode-1.png" width="110%" /&gt;
+]
+
+.panel[.panel-name[R Code]
+
+```r
+ggplot(anes_2p %&gt;% drop_na()) +
+  geom_jitter(aes(x=Education, y=therm_feminists),
+              size = 1, width=.05, height=4, alpha=.15) +
+  geom_linerange(data = group_means_ses, aes(x=Education, color = Education,  ymin=ymin, ymax=ymax), # dif data frame
+                 # color="#ff4d4d",
+                 # size = 1.25
+                 ) +
+  stat_summary(data = group_means_ses, aes(x=Education, y=therm_feminists, color = Education), # dif data frame
+               fun.y = mean
+               , size = .15
+               ) +
+  facet_wrap(~ party_id) +
+  labs(y="Feeling Thermometer-Feminists") +
+  scale_color_manual(values = c("green", "purple")) # discrete colors for B&amp;W, colorblind-friendly 
+```
+]
+
+.panel[.panel-name[Republican Test]
+
+```r
+anes_2p %&gt;% 
+  filter(party_id == "Republican") %&gt;% 
+  lm(therm_feminists ~ Education, data = .) %&gt;% 
+  tidy()
+```
+
+```
+## # A tibble: 2 x 5
+##   term                          estimate std.error statistic   p.value
+##   &lt;chr&gt;                            &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+## 1 (Intercept)                      44.5       1.14     38.9  1.43e-203
+## 2 EducationNon-College Graduate    -1.63      1.51     -1.08 2.81e-  1
+```
+
+]
+]
+
+
+---
+class: top, left
+
+## Another way to visualize the interaction
+
+.panelset[
+
+.panel[.panel-name[Code]
+
+```r
+ggplot(group_means_ses, aes(x=Education, y=therm_feminists, color=party_id)) +
+  geom_point() +
+  geom_linerange(aes(x=Education, ymin=ymin, ymax=ymax)) +
+  lims(y=c(0,100)) +
+  labs(y="Feeling Thermometer-Feminists", color = "Party ID")
+```
+
+]
+
+.panel[.panel-name[Output]
+
+&lt;img src="week_11_interactions_files/figure-html/unnamed-chunk-11-1.png" width="85%" style="display: block; margin: auto;" /&gt;
+
+]
+]
+
+
+---
+class: top, left
+
+## One Last Way to Visualize
+
+.panelset[
+
+.panel[.panel-name[Code]
+
+```r
+ggplot(group_means_ses, aes(x=Education, y=therm_feminists, color=party_id)) +
+  geom_line(aes(group=party_id)) +
+  geom_point() +
+  geom_linerange(aes(x=Education, ymin=ymin, ymax=ymax)) +
+  lims(y=c(0,100)) +
+  labs(y="Feeling Thermometer-Feminists", color = "Party ID")
+```
+
+]
+
+.panel[.panel-name[Output]
+
+&lt;img src="week_11_interactions_files/figure-html/unnamed-chunk-12-1.png" width="85%" style="display: block; margin: auto;" /&gt;
+
+]
+]
+
+
+---
+class: middle
+
+# Practice
+
+Use regression to test whether the effect of education on feelings towards Hillary Clinton  (`therm_hillary`) depends on party ID. What do you find?
+
+
+---
+class: middle
+
+## Feelings towards Hillary
+
+.smallcode[
+
+```r
+hil_mod &lt;- lm(therm_hillary ~ Education * party_id, 
+            data = anes_2p)
+
+tidy(hil_mod)
+```
+
+```
+## # A tibble: 4 x 5
+##   term                                    estimate std.error statistic   p.value
+##   &lt;chr&gt;                                      &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+## 1 (Intercept)                                74.0      0.949     78.0  0.       
+## 2 EducationNon-College Graduate              -4.51     1.24      -3.65 2.70e-  4
+## 3 party_idRepublican                        -57.5      1.40     -40.9  2.83e-284
+## 4 EducationNon-College Graduate:party_id~     2.54     1.82       1.39 1.64e-  1
+```
+]
+
+
+---
+class: top, left
+
+## Interactions vs. non-interacted controls
+
+What is the difference?
+
+With ordinary controls (assuming additive, not interaction effects), effect (slope) of main IV the same for all observations
+
+- If dummy/categorical variables included, a different intercept is estimated for each category
+
+--
+
+With interactions, the *effect* of one variable is different at different levels of another variable
+
+- A different slope and intercept are estimated for each category that is interacted with the main IV
+
+
+---
+class: top, left
+
+## Female smoking rate and GDP per capita
+
+.panelset[
+
+.panel[.panel-name[Code]
+
+```r
+smoking_raw &lt;- read_csv(here("data", "smoking.csv"))
+
+ggplot(smoking_raw, aes(x=gdp_per_cap, y=smoking_female)) +
+  geom_point(alpha=.4) +
+  geom_smooth(method = "lm") +
+  labs(x="GDP per Capita", y="Female Smoking Rate")
+```
+
+]
+
+.panel[.panel-name[Output]
+
+&lt;img src="week_11_interactions_files/figure-html/unnamed-chunk-14-1.png" width="85%" style="display: block; margin: auto;" /&gt;
+
+]
+]
+
+
+---
+class: middle
+
+## Log GDP per capita
+
+To deal with the skewed GDP per capita variable, create a logged version
+
+
+```r
+smoking &lt;- smoking_raw %&gt;% 
+  mutate(log_gdp_per_cap = log(gdp_per_cap))
+```
+
+
+---
+class: middle
+
+## Additive model
+
+Only controlling for continent (no interaction)
+
+
+```r
+add_smokemod &lt;- lm(smoking_female ~ log_gdp_per_cap + continent, 
+                   data = smoking)
+tidy(add_smokemod)
+```
+
+```
+## # A tibble: 5 x 5
+##   term              estimate std.error statistic   p.value
+##   &lt;chr&gt;                &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+## 1 (Intercept)          -7.25      7.78    -0.931 0.356    
+## 2 log_gdp_per_cap       1.57      1.09     1.44  0.156    
+## 3 continentAmericas     4.85      3.12     1.55  0.127    
+## 4 continentAsia        -1.11      3.58    -0.311 0.757    
+## 5 continentEurope      18.0       4.06     4.43  0.0000526
+```
+
+
+---
+class: top, left
+
+## What does the Additive Model Do?
+
+.panelset[.panel[.panel-name[Plot]
+&lt;img src="week_11_interactions_files/figure-html/addcode1-1.png" width="85%" style="display: block; margin: auto;" /&gt;
+]
+
+.panel[.panel-name[R Code]
+
+```r
+dm_data &lt;- smoking %&gt;% 
+  group_by(continent) %&gt;% 
+  mutate(smoking_female_dm = smoking_female - mean(smoking_female),
+         log_gdp_per_cap_dm = log_gdp_per_cap - mean(log_gdp_per_cap))
+
+ggplot(dm_data, aes(x=log_gdp_per_cap_dm, y=smoking_female_dm)) +
+  geom_point(aes(color = continent)) +
+  geom_smooth(method = "lm") +
+  labs(x="Demeaned GDP per Capita", y="Demeaned F. Smoking Rate",
+       color="Continent")
+```
+
+]
+]
+
+
+---
+class: top, left
+
+## Another look at the additive model
+
+.panelset[.panel[.panel-name[Plot]
+&lt;img src="week_11_interactions_files/figure-html/addcode2-1.png" width="85%" style="display: block; margin: auto;" /&gt;
+]
+
+.panel[.panel-name[R Code]
+
+```r
+smoking_pred &lt;- smoking %&gt;% 
+  mutate(pred = predict(add_smokemod))
+
+ggplot(smoking_pred, aes(x=log_gdp_per_cap, y=smoking_female, color=continent)) +
+  geom_point(aes(color = continent)) +
+  geom_line(aes(y=pred)) +
+  labs(x="GDP per Capita (log)", y="Female Smoking Rate",
+       color="Continent", title = "Same slope, different intercepts")
+```
+
+]
+]
+
+---
+class: top, left
+
+## Visualizing the interaction
+
+.panelset[.panel[.panel-name[Plot]
+&lt;img src="week_11_interactions_files/figure-html/intcode-1.png" width="85%" style="display: block; margin: auto;" /&gt;
+]
+
+.panel[.panel-name[R Code]
+
+```r
+ggplot(smoking, aes(x=log_gdp_per_cap, y=smoking_female, color=continent)) +
+  geom_smooth(method = "lm", alpha=.4) +
+  geom_point(size=.5, alpha=.7) +
+  facet_grid(~ continent) +
+  labs(x="GDP per Capita (log)", y="Female Smoking Rate",
+       color = "Continent")
+```
+]
+]
+
+
+---
+class: middle
+
+# Interaction: Regression results
+
+.smallcode[
+
+```r
+smokemod &lt;- lm(smoking_female ~ log_gdp_per_cap * continent, data = smoking)
+tidy(smokemod)
+```
+
+```
+## # A tibble: 8 x 5
+##   term                              estimate std.error statistic p.value
+##   &lt;chr&gt;                                &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;
+## 1 (Intercept)                          7.94      13.1      0.607 0.547  
+## 2 log_gdp_per_cap                     -0.608      1.87    -0.326 0.746  
+## 3 continentAmericas                  -56.1       20.2     -2.77  0.00808
+## 4 continentAsia                       -7.05      21.6     -0.326 0.746  
+## 5 continentEurope                     45.8       26.5      1.73  0.0899 
+## 6 log_gdp_per_cap:continentAmericas    7.40       2.56     2.89  0.00587
+## 7 log_gdp_per_cap:continentAsia        1.05       2.80     0.374 0.710  
+## 8 log_gdp_per_cap:continentEurope     -2.17       2.98    -0.730 0.469
+```
+]
+
+
+---
+class: top, left
+
+## Interactions with two continuous variables
+
+
+```r
+adoint &lt;- lm(ado_fert ~ gdp_per_cap*prop_pop_no_ed, data = smoking_raw)
+
+tidy(adoint)
+```
+
+```
+## # A tibble: 4 x 5
+##   term                         estimate std.error statistic  p.value
+##   &lt;chr&gt;                           &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+## 1 (Intercept)                60.3       7.80           7.72 4.47e-10
+## 2 gdp_per_cap                -0.00110   0.000367      -2.99 4.32e- 3
+## 3 prop_pop_no_ed              1.12      0.263          4.26 8.93e- 5
+## 4 gdp_per_cap:prop_pop_no_ed -0.0000551 0.0000485     -1.14 2.61e- 1
+```
+
+
+
+---
+class: middle
+
+# Rules of thumb
+
+Generally, test for an interaction effect only if you have a reason to suspect it may be present
+
+If the interaction term is significant, report results from interaction
+
+- If not, you don't need to even mention the interaction test unless it was a pre-specified hypothesis
+
+Models with interactions:
+
+- Are less plausibly causal (usually at least one variable is not randomly assigned)
+
+- Require more data to achieve the same statistical power
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
