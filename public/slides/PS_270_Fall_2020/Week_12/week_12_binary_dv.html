@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Binary Dependent Variables</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Evan Morier" />
+    <link href="libs/xaringanExtra-extra-styles-0.2.3.9000/xaringanExtra-extra-styles.css" rel="stylesheet" />
+    <link href="libs/panelset-0.2.3.9000/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset-0.2.3.9000/panelset.js"></script>
+    <link href="libs/animate.css-xaringan-3.7.2/animate.fade.css" rel="stylesheet" />
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Binary Dependent Variables
+### Evan Morier
+### PS 270: Understanding Political Numbers
+### November 2020
+
+---
+
+
+class: middle
+
+# Before we begin...
+
+
+
+Packages I'll be using:
+
+
+```r
+library(tidyverse)
+library(broom)
+library(here)
+library(foreign)
+```
+
+Data set I will be using today (available on Canvas):
+
+`merged_r6_data.sav` (Afrobarometer)
+
+
+
+
+&lt;style type="text/css"&gt;
+.smallcode .remark-code { /*Change made here*/
+  font-size: 75% !important;
+}
+&lt;/style&gt;
+
+
+---
+class: middle
+
+## Problem: Regression with binary dependent variables
+
+Linear regression assumes a continuous outcome/DV and normally distributed residuals
+
+- If a DV only takes two values (rather than being continuous), this assumption is violated
+
+Also, fitting a linear regression model with a binary DV can result in less accurate predictions
+
+- Ex: Predicted probabilities possible less than 0 or greater than 1 (impossible)
+
+
+---
+class: middle
+
+## Solution: Logistic regression
+
+Model the *probability* that the DV for a given observation is 1
+
+One way to write the model:
+
+`\(Pr(y_{i} = 1) = logit^{-1}(\alpha + \beta x_{i} + ...)\)`
+
+The model is fit using maximum likelihood estimation
+
+- Using `glm()` in R with family set to binomial
+
+
+---
+class: middle
+
+## Application: Age and voter turnout in Ghana
+
+&lt;img src="img/ghana_voting.jpg" width="80%" style="display: block; margin: auto;" /&gt;
+
+.footnotesize[
+[Image source](https://www.voanews.com/africa/ghana-electoral-commission-begins-preparations-november-polls)
+]
+
+---
+class: middle
+
+# Afrobarometer data: Reading data file
+
+Read in data:
+
+
+
+
+```r
+afro_6_raw &lt;- read.spss(here("data", "merged_r6_data.sav"), 
+                 to.data.frame = TRUE, use.value.labels = TRUE)
+```
+
+
+---
+class: middle
+
+# Cleaning/prepping data
+
+
+```r
+ghana_6 &lt;- afro_6_raw %&gt;% 
+  filter(COUNTRY == "Ghana") %&gt;% 
+  mutate(age = as.numeric(as.character(Q1)),
+         education_factor = as_factor(recode(EDUC_COND,
+                                   "Don't know" = NA_character_,
+                                   "No formal education" = "No Formal Ed.",
+                                   "Post-secondary" = "Post-Secondary")),
+         voted = case_when(
+           Q21 == "You voted in the elections" ~ 1,
+           Q21 %in% c("Don't Know / Can't remember", 
+                            "Missing", "Not Asked in this Country",
+                            "You were too young to vote") ~ NA_real_,
+           TRUE ~ 0), # everything else set to zero
+         close_party = case_when(
+           Q90A == "Yes, feels close to a party" ~ 1,
+           Q90A == "No, not close to any party" ~ 0,
+           TRUE ~ NA_real_
+         ))
+```
+
+
+---
+class: top, left
+
+## Regular regression (linear)
+
+.panelset[.panel[.panel-name[Plot]
+&lt;img src="week_12_binary_dv_files/figure-html/lpmplot-1.png" width="85%" style="display: block; margin: auto;" /&gt;
+]
+
+.panel[.panel-name[R Code]
+
+```r
+ggplot(ghana_6, aes(x=age, y=voted)) +
+  geom_jitter(alpha=.15, 
+              height = .025, width = .5) +
+  geom_smooth(method = "lm")
+```
+]
+]
+
+
+---
+class: middle
+
+## Interpreting the results of a logistic regression
+
+What do coefficients represent?
+
+Instead of "A unit unit change in x leads to a ... change in y", coefficients represent changes in the log-odds ratio
+
+Essentially no one finds these intuitive, so I recommend doing two things:
+
+- Interpret the sign and statistical significance of coefficients
+- Calculate and plot predicted probabilities 
+- Make a statement about how changes in an IV are associated with changes in predicted probabilities
+
+
+---
+class: top, left
+
+## Fitting a logistic regression model
+
+.panelset[
+.panel[.panel-name[Model]
+
+```r
+turnout_bivariate &lt;- glm(voted ~ age, family = binomial, 
+                         data = ghana_6)
+
+tidy(turnout_bivariate)
+```
+
+```
+## # A tibble: 2 x 5
+##   term        estimate std.error statistic       p.value
+##   &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;         &lt;dbl&gt;
+## 1 (Intercept)   0.936    0.161        5.82 0.00000000601
+## 2 age           0.0167   0.00411      4.07 0.0000468
+```
+
+CAUTION: The coefficients cannot be interpreted in the usual way!
+]
+
+.panel[.panel-name[Predicted Probabilities]
+
+```r
+turnout_preds &lt;- augment(turnout_bivariate, type.predict = "response",
+                         newdata = tibble(age = seq(20, 100, 10)))
+
+turnout_preds
+```
+
+```
+## # A tibble: 9 x 2
+##     age .fitted
+##   &lt;dbl&gt;   &lt;dbl&gt;
+## 1    20   0.781
+## 2    30   0.808
+## 3    40   0.833
+## 4    50   0.855
+## 5    60   0.874
+## 6    70   0.892
+## 7    80   0.907
+## 8    90   0.920
+## 9   100   0.932
+```
+
+]
+]
+
+
+---
+class: top, left
+
+## Plotting the logistic regression model
+
+.panelset[.panel[.panel-name[Plot]
+&lt;img src="week_12_binary_dv_files/figure-html/logitplot-1.png" width="85%" style="display: block; margin: auto;" /&gt;
+]
+
+.panel[.panel-name[R Code]
+
+```r
+ggplot(ghana_6, aes(x=age, y=voted)) +
+  geom_jitter(alpha=.15, 
+              height = .025, width = .5) +
+  geom_smooth(method = "glm",
+              method.args = list(family = "binomial"))
+```
+]
+]
+
+
+---
+class: middle
+
+# Multiple logistic regression
+
+
+```r
+ed_age &lt;- glm(voted ~  education_factor + age, 
+              family = binomial, data = ghana_6)
+tidy(ed_age)
+```
+
+```
+## # A tibble: 5 x 5
+##   term                           estimate std.error statistic    p.value
+##   &lt;chr&gt;                             &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt;
+## 1 (Intercept)                      1.10     0.230       4.79  0.00000165
+## 2 education_factorPrimary         -0.329    0.185      -1.78  0.0749    
+## 3 education_factorSecondary       -0.105    0.166      -0.633 0.527     
+## 4 education_factorPost-Secondary  -0.133    0.214      -0.622 0.534     
+## 5 age                              0.0162   0.00424     3.82  0.000131
+```
+
+
+
+---
+class: middle
+
+## Getting predictions
+
+Need to hold all but one variable constant
+
+
+```r
+ed_data &lt;- tibble(
+  education = c("No Formal Ed.", "Primary", "Secondary", "Post-Secondary"),
+  education_factor = as_factor(education),
+  age = mean(ghana_6$age, na.rm = TRUE) # hold constant at mean
+)
+
+inverse_logit = function(x){ # need this for better conf ints
+  exp(x)/(1+exp(x))
+}
+
+int_pred &lt;- augment(ed_age, newdata = ed_data,
+                    se_fit = TRUE, type.predict = "link") %&gt;% 
+  mutate(pred = inverse_logit(.fitted), # prediction in probability
+         lower = inverse_logit(.fitted - (1.96*.se.fit)),
+         upper = inverse_logit(.fitted + (1.96*.se.fit)),
+         Education = education_factor)
+```
+
+
+
+---
+class: top, left
+
+# Plotting predicted probabilities
+
+.panelset[
+.panel[.panel-name[Code]
+
+```r
+ggplot(int_pred, aes(x=Education, y=pred)) +
+  geom_point(size = 2, alpha=.5,
+             position=position_dodge(width=0.3)) +
+  geom_linerange(aes(x=Education,
+                     ymin = lower, ymax = upper),
+                 position=position_dodge(width=0.3)) +
+  lims(y = c(.7, .95)) +
+  labs(y="Predicted Probability of Voting", title="Turnout and Education",
+       caption="Note: Predictions from a logistic regression model with age held at mean (38).") 
+```
+
+]
+
+.panel[.panel-name[Output]
+
+&lt;img src="week_12_binary_dv_files/figure-html/unnamed-chunk-13-1.png" width="85%" /&gt;
+
+]
+]
+
+
+---
+class: middle
+
+# Interpretation
+
+
+```r
+augment(ed_age, newdata = ed_data,
+        type.predict = "response")
+```
+
+```
+## # A tibble: 4 x 4
+##   education      education_factor   age .fitted
+##   &lt;chr&gt;          &lt;fct&gt;            &lt;dbl&gt;   &lt;dbl&gt;
+## 1 No Formal Ed.  No Formal Ed.     38.3   0.848
+## 2 Primary        Primary           38.3   0.801
+## 3 Secondary      Secondary         38.3   0.834
+## 4 Post-Secondary Post-Secondary    38.3   0.831
+```
+
+
+Turnout is about five percentage points lower for those with only a primary education than for those with no formal education, holding age constant (though this difference is not statistically significant with *p*=.07).
+
+Predicted probabilities for secondary or post-secondary education are slightly lower than those without formal education but the differences are not statistically significant.
+
+
+---
+class: middle
+
+# Practice
+
+Run a logistic regression model regressing whether a respondent feels close to a political party (`close_party`) on their age.
+
+Plot the data and add the logistic regression line to it.
+
+Interpret the results.
+
+Hint: Because there are no control variables to be held constant, you don't need to worry about predicting with `augment` to plot, but it may be useful for interpretation of the regression.
+
+
+---
+class: middle, inverse, center
+
+# Sample solutions
+
+---
+class: middle
+
+# Model
+
+
+```r
+close_mod &lt;- glm(close_party ~ age, family = binomial, data = ghana_6)
+tidy(close_mod)
+```
+
+```
+## # A tibble: 2 x 5
+##   term        estimate std.error statistic p.value
+##   &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;
+## 1 (Intercept)  0.361     0.125        2.90 0.00379
+## 2 age          0.00770   0.00309      2.49 0.0128
+```
+
+
+---
+class: middle
+
+# Predicted probabilities
+
+
+```r
+close_preds &lt;- augment(close_mod, type.predict = "response",
+                       newdata = tibble(age = seq(20, 100, 10))) %&gt;% 
+  mutate(dif = .fitted - lag(.fitted))
+
+close_preds
+```
+
+```
+## # A tibble: 9 x 3
+##     age .fitted     dif
+##   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;
+## 1    20   0.626 NA     
+## 2    30   0.644  0.0179
+## 3    40   0.661  0.0175
+## 4    50   0.678  0.0170
+## 5    60   0.695  0.0166
+## 6    70   0.711  0.0161
+## 7    80   0.727  0.0156
+## 8    90   0.742  0.0150
+## 9   100   0.756  0.0145
+```
+
+Each additional 10 years of age is associated with a .14 to .18 increase in the probability of feeling close to a political party
+
+
+---
+class: top, left
+
+# Visualization
+
+.panelset[
+.panel[.panel-name[Code]
+
+```r
+ggplot(ghana_6, aes(x=age, y=close_party)) +
+  geom_jitter(alpha=.15, 
+              height = .025, width = .5) +
+  geom_smooth(method = "glm",
+              method.args = list(family = "binomial"))
+```
+
+]
+
+.panel[.panel-name[Output]
+
+&lt;img src="week_12_binary_dv_files/figure-html/unnamed-chunk-17-1.png" width="85%" /&gt;
+
+]
+]
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
