@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Writing a Quantitative Research Paper with R Markdown</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Evan Morier" />
+    <link href="libs/xaringanExtra-extra-styles-0.2.3.9000/xaringanExtra-extra-styles.css" rel="stylesheet" />
+    <link href="libs/panelset-0.2.3.9000/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset-0.2.3.9000/panelset.js"></script>
+    <link href="libs/animate.css-xaringan-3.7.2/animate.fade.css" rel="stylesheet" />
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Writing a Quantitative Research Paper with R Markdown
+### Evan Morier
+### PS 270: Understanding Political Numbers
+### November 2020
+
+---
+
+
+class: middle
+
+# Before we begin...
+
+
+
+Packages I'll be using:
+
+
+```r
+library(tidyverse)
+library(stargazer)
+library(arsenal) 
+library(gapminder)
+```
+
+
+
+
+&lt;style type="text/css"&gt;
+.smallcode .remark-code { /*Change made here*/
+  font-size: 75% !important;
+}
+table {
+  font-size: 12px;     
+}
+&lt;/style&gt;
+
+
+
+---
+class: middle
+
+# Final paper assignment
+
+Read the assignment carefully
+
+Use the template Rmd file if you'd like
+
+
+---
+class: middle
+
+# Paper sections
+
+- Introduction 
+- Theory/Hypotheses 
+- Data (and description of models)
+- Results 
+- Discussion 
+- Conclusion
+
+
+---
+class: middle
+
+## Example Paper
+
+I recommend that you at least skim it
+
+You don't have to do things exactly the same way!
+
+- E.g. table in appendix, model with controls only, interaction
+
+- I did logistic regression, so I didn't directly interpret coefficients (instead did predicted probabilities)
+
+Do not plagiarize my paper!
+
+- But you can use terminology/structure, code for inspiration
+
+
+---
+class: middle
+
+## Knitting to PDF
+
+Need to install LaTeX if you haven't done so already
+
+- If you have already knit to PDF successfully, you probably already installed LaTeX
+
+Should be able to do so by running the following lines of code (once, i.e. in the console):
+
+
+```r
+install.packages('tinytex')
+tinytex::install_tinytex()
+```
+
+If you have issues, post in the Q&amp;A forum
+
+---
+class: middle
+
+## Useful LaTeX Commands
+
+To change to single spacing, or back to double:
+
+- `\singlespacing`, `\doublespacing`
+
+To change font size:
+
+- `\normalsize`, `\small`, `\footnotesize`, `\scriptsize`, `\tiny`
+
+Can use these throughout text portion of R Markdown file (not in code chunks)
+
+Make sure these commands are on their own line (separate by two blank lines = better)
+
+
+---
+class: middle
+
+## R Markdown Code Chunks
+
+Useful options:
+
+- `cache=TRUE`
+  + Saves results so code in that chunk doesn't have to run each time you knit
+
+- `results='asis'`
+  + Use when producing nice tables that a package already formatted for you (e.g. `stargazer`, `arsenal`)
+
+- `fig.height and fig.width`
+  + Adjust figure size (in inches)
+
+
+---
+class: middle
+
+# R Markdown Formatting
+
+Footnotes use format: "^[text here]"
+
+[See this reference for some other tips](https://rmarkdown.rstudio.com/authoring_basics.html), e.g. how to make text bold or italics
+
+
+
+
+---
+class: middle
+
+## Header
+
+This is in the template file
+
+```
+title: "title"  
+author: "your name"  
+date: "today's date"  
+fontsize: 12pt  
+geometry: margin = 1in  
+indent: true  
+header-includes:  
+    - \usepackage{setspace}  
+    - \doublespacing  
+output: pdf_document  
+```
+
+
+---
+class: middle
+
+## `arsenal::tableby()`
+
+Useful function for creating a table of summary statistics
+
+I recommend using it, though it isn't required (but make sure you include all required parts if you use another package)
+
+
+---
+class: top, left
+
+## Summary Statistics using `tableby()`
+
+.panelset[.panel[.panel-name[Code]
+```` ```{r, results='asis'} ````
+
+```r
+summ_data &lt;- gapminder %&gt;% 
+  rename("Life Expectancy" = lifeExp,
+         "GDP per Capita" = gdpPercap,
+         "Continent" = continent)
+
+gap_summ &lt;- tableby(~  `Continent` + `Life Expectancy` + 
+                      `GDP per Capita`, data = summ_data) 
+
+summary(gap_summ, title = "Summary Statistics")
+```
+```` ``` ````
+
+]
+
+.panel[.panel-name[Output]
+
+
+Table: Summary Statistics
+
+|                            |   Overall (N=1704)   |
+|:---------------------------|:--------------------:|
+|**Continent**               |                      |
+|&amp;nbsp;&amp;nbsp;&amp;nbsp;Africa    |     624 (36.6%)      |
+|&amp;nbsp;&amp;nbsp;&amp;nbsp;Americas  |     300 (17.6%)      |
+|&amp;nbsp;&amp;nbsp;&amp;nbsp;Asia      |     396 (23.2%)      |
+|&amp;nbsp;&amp;nbsp;&amp;nbsp;Europe    |     360 (21.1%)      |
+|&amp;nbsp;&amp;nbsp;&amp;nbsp;Oceania   |      24 (1.4%)       |
+|**Life Expectancy**         |                      |
+|&amp;nbsp;&amp;nbsp;&amp;nbsp;Mean (SD) |   59.474 (12.917)    |
+|&amp;nbsp;&amp;nbsp;&amp;nbsp;Range     |   23.599 - 82.603    |
+|**GDP per Capita**          |                      |
+|&amp;nbsp;&amp;nbsp;&amp;nbsp;Mean (SD) | 7215.327 (9857.455)  |
+|&amp;nbsp;&amp;nbsp;&amp;nbsp;Range     | 241.166 - 113523.133 |
+
+]
+]
+
+
+---
+class: middle
+
+## Stargazer Review
+
+Package that produces nice-looking regression model output
+
+Let's you put multiple models side-by-side
+
+But lot's of options to set
+
+
+### Example Models
+
+
+```r
+bi_gap_mod &lt;- lm(lifeExp ~ gdpPercap, data = gapminder)
+
+cont_gap_mod &lt;- lm(lifeExp ~ gdpPercap + continent, data = gapminder)
+```
+
+
+
+---
+class: top, left
+
+### Stargazer Example
+
+.panelset[.panel[.panel-name[Code]
+```` ```{r, results='asis'} ````
+
+```r
+stargazer(bi_gap_mod, cont_gap_mod,
+          title = "Life Expectancy and Income",
+          dep.var.labels = c("Life Expectancy"),
+          covariate.labels = c("GDP per Capita", "Americas",
+                               "Asia", "Europe",
+                               "Oceania", "Intercept"),
+          omit.stat = c("rsq", "adj.rsq", "ser", "f", "aic", "ll"),
+          # report = c("vcsp"), # optional; variables, coefs, std. errors, p-values
+          header=FALSE, font.size = "footnotesize",
+          # type="text",
+          notes.align = "l", notes.label = "",
+          notes = c("Note: Data come from the gapminder package.",
+                    "Second line of note, if needed"))
+```
+```` ``` ````
+]
+
+.panel[.panel-name[Output]
+
+&lt;table style="text-align:center"&gt;&lt;caption&gt;&lt;strong&gt;Life Expectancy and Income&lt;/strong&gt;&lt;/caption&gt;
+&lt;tr&gt;&lt;td colspan="3" style="border-bottom: 1px solid black"&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td colspan="2"&gt;&lt;em&gt;Dependent variable:&lt;/em&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;/td&gt;&lt;td colspan="2" style="border-bottom: 1px solid black"&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td colspan="2"&gt;Life Expectancy&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td&gt;(1)&lt;/td&gt;&lt;td&gt;(2)&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td colspan="3" style="border-bottom: 1px solid black"&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style="text-align:left"&gt;GDP per Capita&lt;/td&gt;&lt;td&gt;0.001&lt;sup&gt;***&lt;/sup&gt; (0.00003)&lt;/td&gt;&lt;td&gt;0.0004&lt;sup&gt;***&lt;/sup&gt; (0.00002)&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;Americas&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;13.593&lt;sup&gt;***&lt;/sup&gt; (0.601)&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;Asia&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;8.658&lt;sup&gt;***&lt;/sup&gt; (0.555)&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;Europe&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;17.572&lt;sup&gt;***&lt;/sup&gt; (0.626)&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;Oceania&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;td&gt;18.146&lt;sup&gt;***&lt;/sup&gt; (1.787)&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;Intercept&lt;/td&gt;&lt;td&gt;53.956&lt;sup&gt;***&lt;/sup&gt; (0.315)&lt;/td&gt;&lt;td&gt;47.889&lt;sup&gt;***&lt;/sup&gt; (0.340)&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td colspan="3" style="border-bottom: 1px solid black"&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style="text-align:left"&gt;Observations&lt;/td&gt;&lt;td&gt;1,704&lt;/td&gt;&lt;td&gt;1,704&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td colspan="3" style="border-bottom: 1px solid black"&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td colspan="3" style="text-align:left"&gt;&lt;sup&gt;*&lt;/sup&gt;p&lt;0.1; &lt;sup&gt;**&lt;/sup&gt;p&lt;0.05; &lt;sup&gt;***&lt;/sup&gt;p&lt;0.01&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td colspan="3" style="text-align:left"&gt;Note: Data come from the gapminder package.&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td colspan="3" style="text-align:left"&gt;Second line of note, if needed&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+]
+]
+
+
+---
+class: middle
+
+## Stargazer Tips
+
+Use the help file (`?stargazer`)!
+
+Work with it using `type = "text"` to debug
+
+- Comment out that line when knitting
+
+Look at the code for the example paper I wrote for more examples
+
+You can decide whether to report standard errors and p-values
+
+
+---
+class: middle
+
+## Back up your Work!
+
+Assume that your computer will crash and the hard drive will be unrecoverable at any moment
+
+Best precaution: automatically sync your files to the cloud (e.g. Dropbox)
+
+Next best option: Upload your work to the cloud often 
+
+- More often when you are working on a big project
+
+Better than nothing: email yourself a copy of important files as you are working on them
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
