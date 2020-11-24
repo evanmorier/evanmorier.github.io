@@ -5,12 +5,22 @@
     <link>https://www.evanmorier.com/</link>
       <atom:link href="https://www.evanmorier.com/index.xml" rel="self" type="application/rss+xml" />
     <description>Evan Morier</description>
-    <generator>Source Themes Academic (https://sourcethemes.com/academic/)</generator><language>en-us</language><lastBuildDate>Fri, 10 Jan 2020 11:49:08 -0600</lastBuildDate>
+    <generator>Source Themes Academic (https://sourcethemes.com/academic/)</generator><language>en-us</language><lastBuildDate>Tue, 24 Nov 2020 12:16:25 -0800</lastBuildDate>
     <image>
       <url>https://www.evanmorier.com/img/icon-192.png</url>
       <title>Evan Morier</title>
       <link>https://www.evanmorier.com/</link>
     </image>
+    
+    <item>
+      <title>Political Science 270: Understanding Political Numbers (Fall 2020)</title>
+      <link>https://www.evanmorier.com/teaching/ps270-fall2020/</link>
+      <pubDate>Tue, 24 Nov 2020 12:16:25 -0800</pubDate>
+      <guid>https://www.evanmorier.com/teaching/ps270-fall2020/</guid>
+      <description>&lt;h2 id=&#34;week-2-basics-of-quantitative-political-science-research-r-basics&#34;&gt;Week 2: Basics of quantitative political science research; R basics&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.evanmorier.com/slides/PS_270_Fall_2020/week%202/week-2-basics-of-quant-poli-sci-research-slides&#34;&gt;Basics of Quantitative Political Science Research&lt;/a&gt;&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Converting images of tabular data to .csv files</title>

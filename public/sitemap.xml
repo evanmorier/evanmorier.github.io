@@ -3,12 +3,22 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
-    <loc>https://www.evanmorier.com/post/ocr-data/</loc>
-    <lastmod>2020-01-10T11:49:08-06:00</lastmod>
+    <loc>https://www.evanmorier.com/</loc>
+    <lastmod>2020-11-24T12:16:25-08:00</lastmod>
   </url>
   
   <url>
-    <loc>https://www.evanmorier.com/</loc>
+    <loc>https://www.evanmorier.com/teaching/ps270-fall2020/</loc>
+    <lastmod>2020-11-24T12:16:25-08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://www.evanmorier.com/teaching/</loc>
+    <lastmod>2020-11-24T12:16:25-08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://www.evanmorier.com/post/ocr-data/</loc>
     <lastmod>2020-01-10T11:49:08-06:00</lastmod>
   </url>
   
@@ -42,15 +52,7 @@
   </url>
   
   <url>
-    <loc>https://www.evanmorier.com/teaching/ps270/slides/</loc>
-  </url>
-  
-  <url>
     <loc>https://www.evanmorier.com/tags/</loc>
-  </url>
-  
-  <url>
-    <loc>https://www.evanmorier.com/teaching/</loc>
   </url>
   
 </urlset>
