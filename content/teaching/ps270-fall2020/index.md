@@ -28,8 +28,14 @@ image:
 projects: []
 ---
 
+## Lecture Slides
 
-## Week 2: Basics of quantitative political science research; R basics
+#### Week 2: Basics of quantitative political science research; R basics
 
-[Basics of Quantitative Political Science Research](/slides/PS_270_Fall_2020/week%202/week-2-basics-of-quant-poli-sci-research-slides)
+- [Basics of Quantitative Political Science Research](/slides/PS_270_Fall_2020/week%202/week-2-basics-of-quant-poli-sci-research-slides)
+
+
+
+
+
 

@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Analyzing Panel Data</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Evan Morier" />
+    <link href="libs/anchor-sections-1.0/anchor-sections.css" rel="stylesheet" />
+    <script src="libs/anchor-sections-1.0/anchor-sections.js"></script>
+    <link href="libs/xaringanExtra-extra-styles-0.2.3.9000/xaringanExtra-extra-styles.css" rel="stylesheet" />
+    <link href="libs/panelset-0.2.3.9000/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset-0.2.3.9000/panelset.js"></script>
+    <link href="libs/animate.css-xaringan-3.7.2/animate.fade.css" rel="stylesheet" />
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Analyzing Panel Data
+### Evan Morier
+### PS 270: Understanding Political Numbers
+### November 2020
+
+---
+
+
+class: top, left
+
+# Before we begin...
+
+
+
+Packages I'll be using:
+
+
+```r
+library(tidyverse)
+library(broom)
+library(here)
+library(stargazer)
+library(estimatr)
+```
+
+
+Data set I will be using (available on Canvas): `ukcpr.csv`&lt;sup&gt;1&lt;/sup&gt;
+
+.footnote[
+University of Kentucky Center for Poverty Research. 2019. “UKCPR National Welfare Data, 1980-2018.” URL: http://ukcpr.org/resources/national-welfare-data
+]
+
+
+
+
+&lt;style type="text/css"&gt;
+.smallcode .remark-code { /*Change made here*/
+  font-size: 75% !important;
+}
+table {
+  font-size: 12px;     
+}
+&lt;/style&gt;
+
+
+
+---
+class: middle
+
+## What is Panel Data?
+
+.pull-left[
+
+Data where the same units are observed at multiple points in time
+
+Common examples:
+
+- State-year panel, country-year panel, etc.
+
+]
+
+.pull-right[
+
+
+|country     | year| lifeExp|
+|:-----------|----:|-------:|
+|Afghanistan | 1997|  41.763|
+|Afghanistan | 2002|  42.129|
+|Afghanistan | 2007|  43.828|
+|Benin       | 1997|  54.777|
+|Benin       | 2002|  54.406|
+|Benin       | 2007|  56.728|
+|China       | 1997|  70.426|
+|China       | 2002|  72.028|
+|China       | 2007|  72.961|
+]
+
+---
+class: middle
+
+## Advantages of panel data
+
+Increases the number of observations
+
+Allows us to control for time-invariant characteristics
+
+**Warning**
+
+Doing *good* panel data analysis is very difficult
+
+There are many assumptions and complications involved that we won't touch on
+
+
+---
+class: middle
+
+## Fixed effects
+
+Fixed effects are independent variables/controls
+
+Usually say "fixed effects" when the variable is either the unit or time variable in a panel
+
+They enter the regression as a set of dummy variables, one for each unique value of the variable, less one
+
+Example:
+- State-year panel from 2011-2014
+- For year fixed effects, three dummy variables: `2012`, `2013`, `2014`
+
+
+---
+class: middle
+
+## Interpretation of Fixed Effects Models: Within Estimator
+
+Fixed effects model also called the "within" estimator
+
+**Example**: Including state fixed effects, the estimated treatment effect is computed within each state and combined
+
+- Assume same slope (treatment effect) but different intercepts for each level/unit
+
+So, estimated effect is how the treatment affects the outcome within units
+
+
+---
+class: middle
+
+## Application: Governor's Party and State Unemployment
+
+
+```r
+ukcpr_raw &lt;- read_csv(here("data", "ukcpr.csv"))
+
+ukcpr &lt;- ukcpr_raw %&gt;% 
+  mutate(dem_gov = as.numeric(if_else(
+    `Governor is Democrat (1=Yes)` == ".", NA_character_, 
+      `Governor is Democrat (1=Yes)`)),
+         unemp_rate = `Unemployment rate`,
+         poverty_rate = `Poverty Rate`,
+         prop_dems_house = `Fraction of State House that is Democrat` * 100,
+         dem_house = case_when(prop_dems_house &gt;= 50 ~ 1,
+                               prop_dems_house &lt; 50 ~ 0,
+                               TRUE ~ NA_real_),
+         pop_thous = Population / 1000)
+```
+
+
+---
+class: middle
+
+## Bivariate Regression
+
+
+```r
+biv_gov &lt;- lm(unemp_rate ~ dem_gov, data = ukcpr)
+tidy(biv_gov)
+```
+
+```
+## # A tibble: 2 x 5
+##   term        estimate std.error statistic     p.value
+##   &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;       &lt;dbl&gt;
+## 1 (Intercept)    5.68     0.0656     86.6  0          
+## 2 dem_gov        0.469    0.0944      4.97 0.000000740
+```
+
+What could be driving this effect?
+
+
+
+
+&lt;!-- Cluster variable determines how standard errors are calculated  --&gt;
+
+&lt;!-- - It's usually the unit FE variable (e.g. country) --&gt;
+
+
+---
+class: middle
+
+## State Fixed Effects
+
+
+```r
+state_fe_gov &lt;- lm(unemp_rate ~ dem_gov + state_name, data = ukcpr)
+tidy(state_fe_gov)
+```
+
+```
+## # A tibble: 51 x 5
+##    term         estimate std.error statistic   p.value
+##    &lt;chr&gt;           &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+##  1 (Intercept)     7.61     0.290      26.2  1.89e-129
+##  2 dem_gov         0.392    0.0882      4.45 9.26e-  6
+##  3 state_nameAL   -0.580    0.408      -1.42 1.55e-  1
+##  4 state_nameAR   -1.38     0.408      -3.39 7.10e-  4
+##  5 state_nameAZ   -1.56     0.408      -3.84 1.28e-  4
+##  6 state_nameCA   -0.564    0.408      -1.38 1.66e-  1
+##  7 state_nameCO   -2.60     0.409      -6.35 2.69e- 10
+##  8 state_nameCT   -2.43     0.408      -5.95 3.20e-  9
+##  9 state_nameDE   -2.73     0.408      -6.68 3.03e- 11
+## 10 state_nameFL   -1.72     0.408      -4.23 2.47e-  5
+## # ... with 41 more rows
+```
+
+
+
+---
+class: top, left
+
+# Let's clean that up a bit
+
+.panelset[
+.panel[.panel-name[Code]
+
+```r
+stargazer(state_fe_gov,
+          title = "Unemployment and Democratic Governors",
+          dep.var.labels = c("Unemployment Rate"),
+          covariate.labels = c("Democratic Governor"),
+          omit = "^state_name",
+          omit.stat = c("rsq", "adj.rsq", "ser", "f", "aic", "ll"),
+          report = c("vcsp"), # variables, coefs, std. errors, p-values
+          header=FALSE, font.size = "tiny",
+          type="html", omit.table.layout = "n",
+          notes.align = "l", notes.label = "",
+          no.space = TRUE, single.row = TRUE)
+```
+
+]
+
+.panel[.panel-name[Output]
+
+
+&lt;table style="text-align:center"&gt;&lt;caption&gt;&lt;strong&gt;Unemployment and Democratic Governors&lt;/strong&gt;&lt;/caption&gt;
+&lt;tr&gt;&lt;td colspan="2" style="border-bottom: 1px solid black"&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td&gt;&lt;em&gt;Dependent variable:&lt;/em&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;/td&gt;&lt;td colspan="1" style="border-bottom: 1px solid black"&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td&gt;Unemployment Rate&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td colspan="2" style="border-bottom: 1px solid black"&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style="text-align:left"&gt;Democratic Governor&lt;/td&gt;&lt;td&gt;0.392 (0.088)&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td&gt;p = 0.00001&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;Constant&lt;/td&gt;&lt;td&gt;7.611 (0.290)&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="text-align:left"&gt;&lt;/td&gt;&lt;td&gt;p = 0.000&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td colspan="2" style="border-bottom: 1px solid black"&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style="text-align:left"&gt;Observations&lt;/td&gt;&lt;td&gt;1,950&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td colspan="2" style="border-bottom: 1px solid black"&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+
+
+]
+]
+
+---
+class: middle
+
+## More Omitted Variables?
+
+What if Democrats tend to win governor's races when the economy is already doing badly?
+
+- Maybe national economic factors, like recessions, affect *both* the governor's party *and* state unemployment
+
+- We can control for these factors that are constant across states but vary over time by including year fixed effects
+
+
+---
+class: middle
+
+# Be careful
+
+Time fixed effects should be specified as a factor variable 
+
+Time fixed effects have become controversial
+
+- Best to leave them out or show results both with and without them
+
+
+---
+class: middle
+
+## State and year fixed effects
+
+
+```r
+st_yr_gov &lt;- lm(unemp_rate ~ dem_gov + state_name + factor(year), 
+                        data = ukcpr)
+
+tidy(st_yr_gov) %&gt;%
+  filter(!str_detect(term, "state_name|year")) # | means "or"
+```
+
+```
+## # A tibble: 2 x 5
+##   term        estimate std.error statistic   p.value
+##   &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+## 1 (Intercept)   8.71      0.221      39.4  4.82e-247
+## 2 dem_gov      -0.0747    0.0522     -1.43 1.53e-  1
+```
+
+
+---
+class: middle
+
+## Practice
+
+Estimate a regression of the `poverty_rate` on whether Democrats control the state house (`dem_house`). 
+
+Include *state* (`state_name`) and *year* fixed effects. 
+
+
+---
+class: middle
+
+## Poverty
+
+
+```r
+pov &lt;-  lm(poverty_rate ~ dem_house + state_name + factor(year),
+                    data = ukcpr)
+
+tidy(pov) %&gt;% 
+  filter(!str_detect(term, "state_name|year"))
+```
+
+```
+## # A tibble: 2 x 5
+##   term        estimate std.error statistic   p.value
+##   &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+## 1 (Intercept)   10.2       0.371     27.4  7.11e-139
+## 2 dem_house      0.237     0.112      2.11 3.53e-  2
+```
+
+
+---
+class: middle
+
+## What about both governor and state house?
+
+As we can see here in Wisconsin, having the governor and state house controlled by different parties does not usually result in a lot of legislative output
+
+Interaction between whether Democrats control the state house and whether the governor is a Democrat:
+
+
+```r
+poverty_rate_unified &lt;-  lm(poverty_rate ~ dem_house*dem_gov + 
+                              state_name + year, data = ukcpr)
+
+tidy(poverty_rate_unified) %&gt;% 
+  filter(!str_detect(term, "^state_name|year"))
+```
+
+```
+## # A tibble: 4 x 5
+##   term              estimate std.error statistic  p.value
+##   &lt;chr&gt;                &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+## 1 (Intercept)         76.8       8.66      8.87  1.69e-18
+## 2 dem_house            0.173     0.160     1.09  2.77e- 1
+## 3 dem_gov             -0.123     0.163    -0.755 4.50e- 1
+## 4 dem_house:dem_gov    0.230     0.205     1.12  2.62e- 1
+```
+
+
+---
+class: middle
+
+## Further information on state control and policy outcomes
+
+[Science of Politics Podcast, Episode 57](https://www.niskanencenter.org/do-democrats-and-republicans-get-different-results/)
+
+Papers discussed in the podcast:
+
+- [Grumbach 2018. "From Backwaters to Major Policymakers: Policy Polarization in the States, 1970–2014"](https://www.cambridge.org/core/journals/perspectives-on-politics/article/from-backwaters-to-major-policymakers-policy-polarization-in-the-states-19702014/51DD7B022E358A99333447A6E2BA7B63)
+
+- [Noisy Retrospection: The Effect of Party Control on Policy
+Outcomes (PDF)](http://adamdynes.com/documents/WP_2019_holbein-dynes_noisy-retrospection.pdf)
+
+
+---
+class: middle
+
+## Is the within estimator what we want?
+
+If the variation in the treatment variable that we care about is within units, then yes
+
+- E.g. same states, different parties in control
+
+But, we don't use any units in which the treatment does not vary over time
+
+- E.g. no states where gov/state house didn't change over period data covers
+
+We also don't take into account any *across-unit* variation
+
+
+---
+class: middle
+
+## Standard Errors
+
+Standard error: measure of variability of an estimate (often talking about `\(\hat{\beta}\)` )
+
+- Used to calculate p-values
+
+Assumes that residuals are fairly "random"
+
+But, with repeated observations, residuals for observations of a given unit are probably correlated
+
+- E.g. residual for all `California` observations could be similar
+
+
+---
+class: middle
+
+## Standard errors with fixed effects
+
+When working with panel data/repeated observations/fixed effects, we usually think correlated residuals occurs
+
+If we don't adjust standard errors, they will likely be too small
+
+- Leads to p-values that are too low (over-reject null hypothesis)
+
+To fix, we "cluster" our standard errors
+
+Coefficients stay the same, but standard errors re-calculated 
+
+
+---
+class: middle
+
+## How to cluster standard errors
+
+Using `lm_robust` from the `estimatr` package, we can fit our usual linear models but with clustered standard errors
+
+
+```r
+biv_gov_cl &lt;- lm_robust(unemp_rate ~ dem_gov + state_name,
+                              data = ukcpr, clusters = state_name)
+
+tidy(biv_gov_cl) %&gt;% 
+  filter(!str_detect(term, "^state_name|year")) %&gt;% 
+  select(term, estimate, std.error, p.value)
+```
+
+```
+##          term  estimate  std.error      p.value
+## 1 (Intercept) 7.6109575 0.06456899 2.614392e-59
+## 2     dem_gov 0.3920411 0.15738691 1.636522e-02
+```
+
+Without clustering, standard error on `dem_gov` was .09
+
+
+---
+class: middle
+
+## Fixed Effects vs Diff-in-Diff
+
+Using fixed effects with panel data can be thought of as a type of diff-in-diff estimator
+
+But with "difference-in-differences", usually:
+
+- Observe treatment and control groups, before and after treatment
+
+Fixed effects regression:
+
+- All observations can receive the treatment in all periods
+
+Both approaches:
+
+- Control for all time-invariant characteristics of each unit
+
+
+
+---
+class: top, left
+
+## Binary outcome variables
+
+When modeling a binary outcome, we usually use logistic regression
+
+But, if we want to include fixed effects we can't use it
+
+- Logistic regression is sensitive to including many "incidental parameters", which bias the main parameter we are interested in ( `\(\hat{\beta}\)` )
+
+--
+
+If you need to use fixed effects with a binary outcome, you can use a plain old linear model (which becomes a linear probability model)
+
+
+```r
+pop_dem &lt;- lm_robust(dem_gov ~ pop_thous + state_name, data = ukcpr,
+                     clusters = state_name)
+
+tidy(pop_dem) %&gt;% 
+  filter(!str_detect(term, "state_name")) %&gt;% 
+  select(term, estimate, std.error, p.value)
+```
+
+```
+##          term      estimate    std.error      p.value
+## 1 (Intercept)  0.4366471928 2.172195e-02 7.239497e-05
+## 2   pop_thous -0.0000426156 3.507642e-05 2.971919e-01
+```
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
