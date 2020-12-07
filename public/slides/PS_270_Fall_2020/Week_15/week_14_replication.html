@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Aggregating Knowledge</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Evan Morier" />
+    <link href="libs/anchor-sections-1.0/anchor-sections.css" rel="stylesheet" />
+    <script src="libs/anchor-sections-1.0/anchor-sections.js"></script>
+    <link href="libs/xaringanExtra-extra-styles-0.2.3.9000/xaringanExtra-extra-styles.css" rel="stylesheet" />
+    <link href="libs/panelset-0.2.3.9000/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset-0.2.3.9000/panelset.js"></script>
+    <link href="libs/animate.css-xaringan-3.7.2/animate.fade.css" rel="stylesheet" />
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Aggregating Knowledge
+### Evan Morier
+### PS 270: Understanding Political Numbers
+### December 2020
+
+---
+
+
+class: middle
+
+## Replication Crisis
+
+.pull-left[
+
+The results from many prominent studies not replicated by other researchers
+
+Prominent case of data fabrication in political science
+
+Realization that statistical significance isn't the end of the story
+
+]
+
+.pull-right[
+
+![](img/replication.jpg)
+
+
+.footnote[
+Image by Dave Plunkert. [Source](https://hub.jhu.edu/2017/11/07/fixing-replication-crisis-in-science/)
+]
+]
+
+
+
+
+
+
+
+
+
+
+&lt;style type="text/css"&gt;
+.smallcode .remark-code { /*Change made here*/
+  font-size: 75% !important;
+}
+table {
+  font-size: 12px;     
+}
+&lt;/style&gt;
+
+
+
+
+
+---
+class: middle
+
+## Statistical Significance
+
+We have to decide whether a treatment affects an outcome
+
+- Because even with a randomized experiment and zero true effect, treatment and control groups will not be exactly the same
+
+Significance level ( `\(\alpha\)` ): probability of rejecting the null hypothesis when it is actually true
+
+- By convention, we use `\(\alpha=.05\)` , so we a p-value below .05 is evidence against the null hypothesis
+
+
+---
+class: middle
+
+## But...
+
+P-Values below .05 do not guarantee there is a "true" relationship between two variables
+
+&lt;img src="img/sim_pvals.PNG" width="80%" style="display: block; margin: auto;" /&gt;
+
+
+---
+class: top, left
+
+## The Importance of Sample Size
+
+When the true effect is *not* zero, a larger sample size makes a significant result more likely
+
+- Increased statistical **power** (probability of rejecting the null when it is in fact false)
+
+This is a good thing
+
+--
+
+But even when the true effect is zero a small sample size can produce significant results
+
+- Particular problem when there is measurement error
+
+
+---
+class: top, left
+
+## Incentives
+
+What incentivizes you to do your coursework?
+
+--
+
+- Exams, quizzes, other assignments
+- Grades
+- Desire to learn/interest in material
+
+These incentives likely encourage better work on average because you need to satisfy your instructors'/TAs' requirements
+
+
+---
+class: top, left
+
+## Different Incentives
+
+What if your grades depended on how good and interesting your *fellow students* thought your work was?
+
+How would that change your approach?
+
+--
+
+Maybe...
+
+- Different paper topics
+- Different exam answers
+
+
+---
+class: middle
+
+## Incentives in Academia/Research
+
+.pull-left[
+
+Peer review can improve research, prevent publication of poor work
+
+But, reviewers can reject good science for reasons other than objective quality
+
+]
+
+.pull-right[
+![](img/computer.jpg)
+]
+
+
+---
+class: middle
+
+## Researchers are People
+
+Mostly, professors and grad students/post-docs who want to become professors
+
+Research output is the main determinant of who gets a job as a professor and gets tenure/other promotions
+
+- Quality
+- Quantity
+
+This means publications in good academic journals (and books in good academic presses)
+
+
+---
+class: middle
+
+## Publication Bias
+
+Researchers are incentivized to produce studies with statistically significant results (*p&lt;.05*)
+
+For academic journals, their audience (academics), and other consumers of science, significant results are more "interesting"
+
+This results in a **file drawer problem**, where non-significant results are not published
+
+- Distorts evidence for a given phenomenon
+- Poor knowledge accumulation
+
+
+---
+class: middle
+
+## Errors
+
+
+![](img/errors.PNG)
+
+
+---
+class: middle
+
+## What is Replication?
+
+At least two types:
+
+1. A researcher looks at the data and code for a published study and does their own analysis
+
+2. A researcher collects new data to answer a research question from a previously published study
+
+**Focus**: Does the relationship hold in the replication?
+
+
+---
+class: middle
+
+## Why is Replication Important?
+
+Some significant results are erroneous, due to:
+
+- Chance
+- P-hacking/multiple hypothesis tests
+- Researchers' analysis options
+- Coding errors
+- Research misconduct 
+
+
+Without complete picture from multiple studies, including possible null results, hard to synthesize evidence for or against a hypothesis
+
+
+
+---
+class: middle
+
+## Why aren't More Replications Being Conducted?
+
+Less/no professional credit for doing them
+
+- Not valued as much as work with new ideas/theory
+
+Risk offending the original author, who is likely more senior/powerful
+
+- Might need that persons help in the future
+
+Journals rarely publish them
+
+
+---
+class: middle
+
+## What is Being Done to Solve this Problem?
+
+Pre-analysis plans/pre-registration
+
+Data access and research transparency (DART)
+
+More skepticism, especially about surprising results/small sample sizes
+
+
+---
+class: middle
+
+## Where Do Things Stand Now?
+
+Data/code availability still not universal
+
+Weak incentives for replication remain
+
+Pre-registration still uncommon for observational studies
+
+"Publish or perish" is going nowhere
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
